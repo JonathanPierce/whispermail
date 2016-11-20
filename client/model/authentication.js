@@ -93,7 +93,7 @@ let Authentication = {
 
   encrypt(plaintext, alternativeDerived = null) {
     let key = alternativeDerived || derivedPassword;
-    let cipher = crypto.createCipher('aes256', key);
+    let cipher = crypto.createCipher('aes-256-cbc', key);
 
     return new Promise((resolve, reject) => {
       let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
@@ -104,7 +104,7 @@ let Authentication = {
 
   decrypt(ciphertext, alternativeDerived = null) {
     let key = alternativeDerived || derivedPassword;
-    let decipher = crypto.createDecipher('aes256', key);
+    let decipher = crypto.createDecipher('aes-256-cbc', key);
 
     return new Promise((resolve, reject) => {
       let plaintext = decipher.update(ciphertext, 'base64', 'utf8');
