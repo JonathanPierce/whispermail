@@ -1,0 +1,4 @@
+node_modules
+build
+client.db
+scripts/node_test.js

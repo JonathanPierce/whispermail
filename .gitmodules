@@ -1,0 +1,3 @@
+[submodule "client/libsignal"]
+	path = client/libsignal
+	url = https://github.com/WhisperSystems/libsignal-protocol-javascript.git
