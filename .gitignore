@@ -1,4 +1,4 @@
 client/node_modules
-build
-client.db
+client/build
+client/client.db
 scripts/node_test.js

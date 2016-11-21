@@ -75,7 +75,7 @@ let Authentication = {
                     canaryCheck
                   );
 
-                  resolve();
+                  SignalStore.getLoginInfo().then(resolve).catch(reject);
                 }).catch(reject);
               });
             }

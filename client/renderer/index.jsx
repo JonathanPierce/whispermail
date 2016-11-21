@@ -9,6 +9,16 @@ window.dcodeIO.Long = require('long');
 require('../libsignal/dist/libsignal-protocol.js');
 require('../libsignal/dist/libsignal-protocol-worker.js');
 
-let Authentication = require('../model/authentication.js');
-let SignalStore = require('../model/signal_store.js');
-let Database = require('../model/database.js');
+// React
+let React = require('react');
+let ReactDOM = require('react-dom');
+
+// Our stuff
+let Application = require('./application.js');
+
+window.addEventListener('load', () => {
+  ReactDOM.render(
+    <Application/>,
+    document.querySelector('.whispermail')
+  );
+});

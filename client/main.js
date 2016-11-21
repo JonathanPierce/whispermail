@@ -21,7 +21,7 @@ var createWindow = function() {
         index;
 
     // and load the index.html of the app.
-    newWindow.loadURL('file://' + __dirname + '/renderer/index.html');
+    newWindow.loadURL('file://' + __dirname + '/build/index.html');
 
     // Open the DevTools.
     process.env["DEV"] == "true" && newWindow.webContents.openDevTools();

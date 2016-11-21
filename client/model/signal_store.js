@@ -15,6 +15,7 @@ let SignalStore = {
 				serverAddress,
 				serverPort,
 				username,
+				name,
 				salt,
 				canaryCheck
 			}),
