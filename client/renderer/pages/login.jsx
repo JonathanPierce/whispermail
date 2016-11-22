@@ -3,16 +3,17 @@ let React = require('react');
 let Authentication = require('../../model/authentication.js');
 let SignalStore = require('../../model/signal_store.js');
 let AppState = require('../../model/app_state.js');
+let packageInfo = require('../../package.json');
 
 let Login = React.createClass({
   componentDidMount() {
     SignalStore.getLoginInfo().then((loginInfo) => {
-      AppState.getState().loginInfo = {
-        status: loginInfo ? 'enterPassword' : 'signUp',
-        info: loginInfo
-      };
-
-      AppState.update();
+      AppState.update((state) => {
+        state.loginInfo = {
+          status: loginInfo ? 'enterPassword' : 'signUp',
+          info: loginInfo
+        };
+      });
     }).catch((err) => {
       alert(err);
     });
@@ -29,15 +30,15 @@ let Login = React.createClass({
   },
 
   updateServerAddress(e) {
-    this.setState({ serverAddress: e.target.value });
+    this.setState({ serverAddress: e.target.value.replace(/\s/g, '') });
   },
 
   updateServerPort(e) {
-    this.setState({ serverPort: e.target.value });
+    this.setState({ serverPort: e.target.value.replace(/[^0-9]/g, '') });
   },
 
   updateUsername(e) {
-    this.setState({ username: e.target.value });
+    this.setState({ username: e.target.value.replace(/[^0-9a-zA-Z_]/g, '') });
   },
 
   updateName(e) {
@@ -49,8 +50,9 @@ let Login = React.createClass({
   },
 
   signUp() {
-    AppState.getState().loginInfo.status = 'signingUp';
-    AppState.update();
+    AppState.update((state) => {
+      state.loginInfo.status = 'signingUp';
+    });
 
     Authentication.createLoginInfo(this.state.password, {
       serverAddress: this.state.serverAddress,
@@ -58,31 +60,46 @@ let Login = React.createClass({
       username: this.state.username,
       name: this.state.name
     }).then((loginInfo) => {
-      AppState.getState().loginInfo = {
-        status: 'loggedIn',
-        info: loginInfo
-      };
-
-      AppState.update();
+      AppState.update((state) => {
+        state.loginInfo = {
+          status: 'loggedIn',
+          info: loginInfo
+        };
+      });
     }).catch((err) => {
-      AppState.getState().loginInfo.status = 'signUp';
-      AppState.getState().loginInfo.error = err.toString();
-      AppState.update();
+      AppState.update((state) => {
+        state.loginInfo.status = 'signUp';
+        state.loginInfo.error = 'could not sign up';
+      });
     });
   },
 
   login() {
-    AppState.getState().loginInfo.status = 'checkingPassword';
-    AppState.update();
+    AppState.update((state) => {
+      state.loginInfo.status = 'checkingPassword';
+    });
 
     Authentication.setPassword(this.state.password).then(() => {
-      AppState.getState().loginInfo.status = 'loggedIn';
-      AppState.update();
+      AppState.update((state) => {
+        state.loginInfo.status = 'loggedIn';
+      });
     }).catch((err) => {
-      AppState.getState().loginInfo.status = 'enterPassword';
-      AppState.getState().loginInfo.error = err.toString();
-      AppState.update();
+      AppState.update((state) => {
+        state.loginInfo.status = 'enterPassword';
+        state.loginInfo.error = 'that password was incorrect';
+        this.setState({ password: '' });
+      });
     });
+  },
+
+  formComplete() {
+    return (
+      this.state.serverAddress.length &&
+      this.state.serverPort.length &&
+      this.state.username.length &&
+      this.state.name.length &&
+      this.state.password.length
+    );
   },
 
   render() {
@@ -95,20 +112,21 @@ let Login = React.createClass({
     }
 
     let errorMessage = null;
+    let content = null;
 
     if (loginInfo.error) {
       errorMessage = (
-        <div>
-          ERROR: { loginInfo.error }
+        <div className='error'>
+          <b>error:</b> { loginInfo.error }
         </div>
       );
     }
 
     if (loginInfo.status === 'signUp') {
-      return (
+      content = (
         <div>
-          <h1>Welcome to WhisperMail!</h1>
-          <h2>Sign Up</h2>
+          <h2>welcome to whispermail!</h2>
+          <h3>create an account:</h3>
           <div>
             <input
               className='serverAddress'
@@ -116,6 +134,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.serverAddress }
               onChange={ this.updateServerAddress }
+              maxlength={ 256 }
             ></input><br/>
 
             <input
@@ -124,6 +143,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.serverPort }
               onChange={ this.updateServerPort }
+              maxLength={ 5 }
             ></input><br/>
 
             <input
@@ -132,6 +152,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.username }
               onChange={ this.updateUsername }
+              maxlength={ 50 }
             ></input><br/>
 
             <input
@@ -140,35 +161,40 @@ let Login = React.createClass({
               type='text'
               value={ this.state.name }
               onChange={ this.updateName }
+              maxlength={ 100 }
             ></input><br/>
 
             <input
               className='password'
               placeholder='password'
-              type='text'
+              type='password'
               value={ this.state.password }
               onChange={ this.updatePassword }
             ></input><br/>
 
-            <button onClick={ this.signUp }>Sign Up!</button>
-
-            { errorMessage }
+          <button onClick={ this.signUp } disabled={ !this.formComplete() }>sign up</button>
           </div>
+          {
+            (this.state.serverAddress && this.state.username) ? (
+              <p>your email will be { this.state.username }@{ this.state.serverAddress }</p>
+            ) : null
+          }
+          { errorMessage }
         </div>
       );
     }
 
     if (loginInfo.status === 'signingUp') {
-      return (
-        <p>Signing up...</p>
+      content = (
+        <p>signing up...</p>
       );
     }
 
     if (loginInfo.status === 'enterPassword') {
-      return (
+      content = (
         <div>
-          <h1>Welcome back { loginInfo.info.name }!</h1>
-          <h2>Enter Password</h2>
+          <h2>welcome back { loginInfo.info.name.toLowerCase() }!</h2>
+          <h3>enter password:</h3>
           <div>
             <input
               className='password'
@@ -178,25 +204,37 @@ let Login = React.createClass({
               onChange={ this.updatePassword }
             ></input><br/>
 
-            <button onClick={ this.login }>Log In!</button>
-
-            { errorMessage }
+          <button onClick={ this.login } disabled={ !this.state.password.length }>log in</button>
           </div>
+          { errorMessage }
         </div>
       );
     }
 
     if (loginInfo.status === 'checkingPassword') {
-      return (
-        <p>Logging in...</p>
+      content = (
+        <p>logging in...</p>
       );
     }
 
     if (loginInfo.status === 'loggedIn') {
-      return (
-        <p>Logged in sucessfully!</p>
+      content = (
+        <p>logged in sucessfully!</p>
       );
     }
+
+    return (
+      <div className='login'>
+        <div className='header'>
+          <h1 className='logo'>WhisperMail<sup>v{ packageInfo.version }</sup></h1>
+        </div>
+        <div className='content'>
+          { content }
+        </div>
+        <div className='footer'>
+        </div>
+      </div>
+    );
   }
 });
 

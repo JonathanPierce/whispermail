@@ -19,7 +19,8 @@ module.exports = {
     subscribers.push(callback);
   },
 
-  update() {
+  update(callback) {
+    callback(state);
     subscribers.forEach((subscriber) => subscriber(state));
   }
 };

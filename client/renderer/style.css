@@ -1,0 +1,60 @@
+body {
+  font-family: 'Courier New', monospace;
+  width: 100%;
+  height: 100%;
+}
+
+:focus {
+  outline: none;
+}
+
+.login {
+  padding: 24px;
+}
+
+.login .header h1 {
+  font-size: 48pt;
+  color: rgb(50,205,50);
+}
+
+.login .content h3 {
+  color: rgb(128, 128, 128);
+}
+
+.login .content input {
+  border: none;
+  border-bottom: 1px solid black;
+  padding: 6px 0px;
+  margin-bottom: 12px;
+  font-size: 14pt;
+  width: 400px;
+}
+
+.login .error {
+  margin: 12px 0px;
+}
+
+.login .error b {
+  color: red;
+}
+
+.login .content button {
+  border: none;
+  background-color: black;
+  color: white;
+  padding: 8px 12px;
+  margin: 12px 0px;
+  font-size: 14pt;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.login .content button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login .header h1 sup {
+  color: rgb(128,128,128);
+  font-size: 24pt;
+}

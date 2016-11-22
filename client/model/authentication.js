@@ -75,6 +75,7 @@ let Authentication = {
                     canaryCheck
                   );
 
+                  derivedPassword = derived;
                   SignalStore.getLoginInfo().then(resolve).catch(reject);
                 }).catch(reject);
               });
