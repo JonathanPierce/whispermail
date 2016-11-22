@@ -39,6 +39,10 @@ function derivePassword(password, salt) {
   });
 }
 
+function createNewSignalKeys() {
+  // TODO
+}
+
 let Authentication = {
   hasAuthentication() {
     return derivedPassword != null;

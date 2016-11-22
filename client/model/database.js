@@ -20,7 +20,7 @@ function processPutValue(value, options) {
           resolve(encrypted);
         }).catch(reject);
       } else {
-        reject();
+        reject('no authentication');
       }
     }
   });
@@ -47,7 +47,7 @@ function processGetValue(value, options) {
           resolveValue(decrypted);
         }).catch(reject);
       } else {
-        reject();
+        reject('no authentication');
       }
     }
   });

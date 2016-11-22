@@ -65,6 +65,8 @@ let Login = React.createClass({
           status: 'loggedIn',
           info: loginInfo
         };
+
+        state.page = 'mail';
       });
     }).catch((err) => {
       AppState.update((state) => {
@@ -82,6 +84,7 @@ let Login = React.createClass({
     Authentication.setPassword(this.state.password).then(() => {
       AppState.update((state) => {
         state.loginInfo.status = 'loggedIn';
+        state.page = 'mail';
       });
     }).catch((err) => {
       AppState.update((state) => {
@@ -214,12 +217,6 @@ let Login = React.createClass({
     if (loginInfo.status === 'checkingPassword') {
       content = (
         <p>logging in...</p>
-      );
-    }
-
-    if (loginInfo.status === 'loggedIn') {
-      content = (
-        <p>logged in sucessfully!</p>
       );
     }
 
