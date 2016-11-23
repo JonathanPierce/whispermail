@@ -40,7 +40,11 @@ function derivePassword(password, salt) {
 }
 
 function createNewSignalKeys() {
-  // TODO
+  return new Promise((resolve, reject) => {
+    SignalStore.generateLocalRegistrationId().then(() => {
+      SignalStore.generateIdentityKeyPair().then(resolve).catch(reject);
+    }).catch(reject);
+  });
 }
 
 let Authentication = {
@@ -80,7 +84,10 @@ let Authentication = {
                   );
 
                   derivedPassword = derived;
-                  SignalStore.getLoginInfo().then(resolve).catch(reject);
+
+                  createNewSignalKeys().then(() => {
+                    SignalStore.getLoginInfo().then(resolve).catch(reject);
+                  }).catch(reject);
                 }).catch(reject);
               });
             }

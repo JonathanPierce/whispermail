@@ -90,11 +90,15 @@ let SignalStore = {
   },
 
 	getLocalRegistrationId() {
-		return Database.get('registrationId');
+		return new Promise((resolve, reject) => {
+			Database.get('registrationId').then((id) => {
+				resolve(parseInt(id, 10))
+			}).catch(reject);
+		});
 	},
 
   saveLocalRegistrationId(registrationId) {
-    return Database.put('registrationId', null, registrationId);
+    return Database.put('registrationId', null, registrationId.toString());
   },
 
 	generateLocalRegistrationId() {
@@ -131,7 +135,15 @@ let SignalStore = {
 			return Promise.reject("Tried to get identity key for undefined/null key");
     }
 
-		return Database.get('identityKey', identifier);
+		return new Promise((resolve, reject) => {
+			Database.get('identityKey', identifier).then((key) => {
+				if (key) {
+					resolve(SignalStore.helpers.toArrayBuffer(key))
+				} else {
+					resolve(null);
+				}
+			}).catch();
+		});
 	},
 
 	saveIdentity(identifier, identityKey) {
@@ -139,15 +151,18 @@ let SignalStore = {
       return Promise.reject("Tried to put identity key for undefined/null key");
     }
 
-		return Database.put('identityKey', identifier, identityKey);
+		return Database.put('identityKey', identifier, SignalStore.helpers.toString(identityKey));
 	},
 
 	/* Returns a prekeypair object or undefined */
 	loadPreKey(keyId) {
     return new Promise((resolve, reject) => {
-			Database.get('25519KeypreKey', keyId).then((res) => {
+			Database.get('25519KeypreKey', keyId, { json: true }).then((res) => {
 	      if (res) {
-	        return resolve({ pubKey: res.pubKey, privKey: res.privKey });
+	        return resolve({
+						pubKey: SignalStore.helpers.toArrayBuffer(res.pubKey),
+						privKey: SignalStore.helpers.toArrayBuffer(res.privKey)
+					});
 	      } else {
 	        return resolve(undefined);
 	      }
@@ -156,13 +171,16 @@ let SignalStore = {
 	},
 
 	storePreKey(keyId, keyPair) {
-		return Database.put('25519KeypreKey', keyId, keyPair);
+		return Database.put('25519KeypreKey', keyId, JSON.stringify({
+			pubKey: SignalStore.helpers.toString(keyPair.pubKey),
+			privKey: SignalStore.helpers.toString(keyPair.privKey)
+		}));
 	},
 
 	generateNextPreKey() {
 		return new Promise((resolve, reject) => {
-			SignalStore.incrementPreKeyIndex((index) => {
-				KeyHelper.generatePreKey(index).then(function(preKey) {
+			SignalStore.incrementPreKeyIndex().then((index) => {
+				KeyHelper.generatePreKey(index).then((preKey) => {
 		      SignalStore.storePreKey(preKey.keyId, preKey.keyPair).then(() => {
 						resolve(preKey);
 					}).catch(reject);
@@ -176,11 +194,11 @@ let SignalStore = {
 			Database.get('preKeyIndex').then((index) => {
 				index = index || 0;
 				index = parseInt(index, 10);
-				Database.put('preKeyIndex', null, index + 1).then(() => {
+				Database.put('preKeyIndex', null, (index + 1).toString()).then(() => {
 					resolve(index);
 				}).catch(reject);
 			}).catch(reject);
-		})
+		});
 	},
 
 	removePreKey(keyId) {
@@ -190,9 +208,12 @@ let SignalStore = {
 	/* Returns a signed keypair object or undefined */
 	loadSignedPreKey(keyId) {
 		return new Promise((resolve, reject) => {
-			Database.get('25519KeysignedKey', keyId).then((res) => {
+			Database.get('25519KeysignedKey', keyId, { json: true }).then((res) => {
 	      if (res) {
-	        resolve({ pubKey: res.pubKey, privKey: res.privKey });
+	        resolve({
+						pubKey: SignalStore.helpers.toArrayBuffer(res.pubKey),
+						privKey: SignalStore.helpers.toArrayBuffer(res.privKey)
+					});
 	      } else {
 	        resolve(undefined);
 	      }
@@ -201,13 +222,16 @@ let SignalStore = {
 	},
 
 	storeSignedPreKey(keyId, keyPair) {
-		return Database.put('25519KeysignedKey', keyId, keyPair);
+		return Database.put('25519KeysignedKey', keyId, JSON.stringify({
+			pubKey: SignalStore.helpers.toString(keyPair.pubKey),
+			privKey: SignalStore.helpers.toString(keyPair.privKey)
+		}));
 	},
 
 	generateNextSignedPreKey() {
 		return new Promise((resolve, reject) => {
 			SignalStore.getIdentityKeyPair().then((identityKeyPair) => {
-				SignalStore.incrementSignedPreKeyIndex((index) => {
+				SignalStore.incrementSignedPreKeyIndex().then((index) => {
 					KeyHelper.generateSignedPreKey(identityKeyPair, index).then(function(signedPreKey) {
 			      SignalStore.storeSignedPreKey(signedPreKey.keyId, signedPreKey.keyPair).then(() => {
 							resolve(signedPreKey);
@@ -223,11 +247,11 @@ let SignalStore = {
 			Database.get('preKeyIndex').then((index) => {
 				index = index || 0;
 				index = parseInt(index, 10);
-				Database.put('preKeyIndex', null, index + 1).then(() => {
+				Database.put('preKeyIndex', null, (index + 1).toString()).then(() => {
 					resolve(index);
 				}).catch(reject);
 			}).catch(reject);
-		})
+		});
 	},
 
 	removeSignedPreKey(keyId) {
@@ -235,7 +259,15 @@ let SignalStore = {
 	},
 
 	loadSession(identifier) {
-		return Database.get('session', identifier);
+		return new Promise((resolve, reject) => {
+			Database.get('session', identifier).then((session) => {
+				if (session) {
+					resolve(session);
+				} else {
+					resolve(undefined);
+				}
+			}).catch(reject);
+		});
 	},
 
 	storeSession(identifier, record) {

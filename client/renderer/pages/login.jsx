@@ -137,7 +137,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.serverAddress }
               onChange={ this.updateServerAddress }
-              maxlength={ 256 }
+              maxLength={ 256 }
             ></input><br/>
 
             <input
@@ -155,7 +155,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.username }
               onChange={ this.updateUsername }
-              maxlength={ 50 }
+              maxLength={ 50 }
             ></input><br/>
 
             <input
@@ -164,7 +164,7 @@ let Login = React.createClass({
               type='text'
               value={ this.state.name }
               onChange={ this.updateName }
-              maxlength={ 100 }
+              maxLength={ 100 }
             ></input><br/>
 
             <input
