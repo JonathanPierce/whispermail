@@ -1,11 +1,11 @@
 'use strict';
 
-let sqlite3 = require('sqlite3').verbose();
-let fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 let Authentication;
 
 let database;
-let location = './client.db';
+const location = './client.db';
 
 function processPutValue(value, options) {
   return new Promise((resolve, reject) => {
@@ -145,6 +145,32 @@ let Database = {
               } else {
                 processGetValue(row.value, options).then((processedValue) => {
                   resolve(processedValue);
+                }).catch(reject);
+              }
+            }
+          );
+        });
+      });
+    });
+  },
+
+  getAll(kind, options = {}) {
+    return Database.init().then((database) => {
+      return new Promise((resolve, reject) => {
+        setImmediate(() => {
+          database.all(
+            `Select kind, identifier, value from Signal WHERE kind = ?`,
+            [ kind ],
+            (err, rows) => {
+              if (err) {
+                reject({ error: err });
+              } else {
+                const processedResults = rows.map((row) => {
+                  return processGetValue(row.value, options);
+                });
+
+                Promise.all(processedResults).then((processed) => {
+                  resolve(processed);
                 }).catch(reject);
               }
             }

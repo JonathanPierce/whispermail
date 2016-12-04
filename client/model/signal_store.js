@@ -1,7 +1,7 @@
 'use strict';
 
-let Database = require('./database.js');
-let KeyHelper = libsignal.KeyHelper;
+const Database = require('./database.js');
+const KeyHelper = libsignal.KeyHelper;
 
 let SignalStore = {
 	helpers: {

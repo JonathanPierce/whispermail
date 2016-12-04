@@ -1,7 +1,7 @@
 'use strict';
 
-let crypto = require('crypto');
-let SignalStore = require('./signal_store.js');
+const crypto = require('crypto');
+const SignalStore = require('./signal_store.js');
 
 const canaryValue = "MakeAmericaGreatAgain";
 let derivedPassword;
