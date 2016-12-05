@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const SignalStore = require('./signal_store.js');
 
 const canaryValue = "MakeAmericaGreatAgain";
-let derivedPassword;
+let derivedPassword = null;
 
 function validatePassword(attemptedPassword) {
   return new Promise((resolve, reject) => {
@@ -49,7 +49,11 @@ function createNewSignalKeys() {
 
 let Authentication = {
   hasAuthentication() {
-    return derivedPassword != null;
+    return derivedPassword !== null;
+  },
+
+  clearAuthentication() {
+    derivedPassword = null;
   },
 
   hasLoginInfo() {
@@ -99,7 +103,11 @@ let Authentication = {
 
   setPassword(password) {
     return new Promise((resolve, reject) => {
-      validatePassword(password).then(resolve).catch(reject);
+      if (Authentication.hasAuthentication()) {
+        resolve();
+      } else {
+        validatePassword(password).then(resolve).catch(reject);
+      }
     });
   },
 
@@ -108,6 +116,10 @@ let Authentication = {
     let cipher = crypto.createCipher('aes-256-cbc', key);
 
     return new Promise((resolve, reject) => {
+      if (!key) {
+        reject('no key provided');
+      }
+
       let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
       ciphertext += cipher.final('base64');
       resolve(ciphertext);
@@ -119,6 +131,10 @@ let Authentication = {
     let decipher = crypto.createDecipher('aes-256-cbc', key);
 
     return new Promise((resolve, reject) => {
+      if (!key) {
+        reject('no key provided');
+      }
+
       let plaintext = decipher.update(ciphertext, 'base64', 'utf8');
       plaintext += decipher.final('utf8');
       resolve(plaintext);

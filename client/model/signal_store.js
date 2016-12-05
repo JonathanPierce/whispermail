@@ -47,15 +47,15 @@ let SignalStore = {
 		return Database.put(
 			'loginInfo',
 			null,
-			JSON.stringify({
+			{
 				serverAddress,
 				serverPort,
 				username,
 				name,
 				salt,
 				canaryCheck
-			}),
-			{ plaintext: true }
+			},
+			{ plaintext: true, json: true }
 		);
 	},
 
@@ -71,10 +71,10 @@ let SignalStore = {
 	},
 
   saveIdentityKeyPair(keyPair) {
-    return Database.put('identityKey', null, JSON.stringify({
+    return Database.put('identityKey', null, {
 			pubKey: SignalStore.helpers.toString(keyPair.pubKey),
 			privKey: SignalStore.helpers.toString(keyPair.privKey)
-		}));
+		}, { json: true });
   },
 
 	generateIdentityKeyPair() {
@@ -140,7 +140,7 @@ let SignalStore = {
 				if (key) {
 					resolve(SignalStore.helpers.toArrayBuffer(key))
 				} else {
-					resolve(null);
+					resolve(undefined);
 				}
 			}).catch();
 		});
@@ -171,10 +171,10 @@ let SignalStore = {
 	},
 
 	storePreKey(keyId, keyPair) {
-		return Database.put('25519KeypreKey', keyId, JSON.stringify({
+		return Database.put('25519KeypreKey', keyId, {
 			pubKey: SignalStore.helpers.toString(keyPair.pubKey),
 			privKey: SignalStore.helpers.toString(keyPair.privKey)
-		}));
+		}, { json: true });
 	},
 
 	generateNextPreKey() {
@@ -222,10 +222,10 @@ let SignalStore = {
 	},
 
 	storeSignedPreKey(keyId, keyPair) {
-		return Database.put('25519KeysignedKey', keyId, JSON.stringify({
+		return Database.put('25519KeysignedKey', keyId, {
 			pubKey: SignalStore.helpers.toString(keyPair.pubKey),
 			privKey: SignalStore.helpers.toString(keyPair.privKey)
-		}));
+		}, { json: true });
 	},
 
 	generateNextSignedPreKey() {

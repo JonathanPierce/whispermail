@@ -9,6 +9,10 @@ const location = './client.db';
 
 function processPutValue(value, options) {
   return new Promise((resolve, reject) => {
+    if (options.json) {
+      value = JSON.stringify(value);
+    }
+
     if (options.plaintext) {
       resolve(value);
     } else {
@@ -66,13 +70,24 @@ let Database = {
         database = new sqlite3.Database(location);
 
         if (!exists) {
+          // TODO: Cleanup code, add indexes
+
           database.run(
             'CREATE TABLE Signal (kind TEXT, identifier TEXT, value BLOB)',
             (err) => {
               if (err) {
                 reject(err);
               } else {
-                resolve(database);
+                database.run(
+                  'CREATE TABLE Messages (id TEXT, parentId TEXT, data BLOB)',
+                  (err) => {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve(database);
+                    }
+                  }
+                );
               }
             }
           );
@@ -86,37 +101,123 @@ let Database = {
   },
 
   put(kind, identifier, value, options = {}) {
-    return Database.init().then((database) => {
-      return new Promise((resolve, reject) => {
-        setImmediate(() => {
-          // Don't duplicate entries
-          Database.remove(kind, identifier, options).then(() => {
-            processPutValue(value, options).then((processedValue) => {
-              database.run(
-                'INSERT INTO Signal (kind, identifier, value) VALUES (?, ?, ?)',
-                [ kind, identifier, processedValue ],
-                (err) => {
-                  if (err) {
-                    reject({ error: err });
-                  } else {
-                    resolve();
-                  }
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        // Don't duplicate entries
+        Database.remove(kind, identifier, options).then(() => {
+          processPutValue(value, options).then((processedValue) => {
+            database.run(
+              'INSERT INTO Signal (kind, identifier, value) VALUES (?, ?, ?)',
+              [ kind, identifier, processedValue ],
+              (err) => {
+                if (err) {
+                  reject({ error: err });
+                } else {
+                  resolve();
                 }
-              );
-            }).catch(reject);
+              }
+            );
           }).catch(reject);
-        });
-      });
+        }).catch(reject);
+      }).catch(reject);
     });
   },
 
   remove(kind, identifier = null, options = {}) {
-    return Database.init().then((database) => {
-      return new Promise((resolve, reject) => {
-        setImmediate(() => {
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        database.run(
+          `DELETE FROM Signal WHERE kind = ? AND identifier ${ identifier ? '= ?' : 'IS NULL'}`,
+          identifier ? [ kind, identifier ] : [ kind ],
+          (err) => {
+            if (err) {
+              reject({ error: err });
+            } else {
+              resolve();
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  },
+
+  get(kind, identifier = null, options = {}) {
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        database.get(
+          `SELECT kind, identifier, value FROM Signal WHERE kind = ? AND identifier ${ identifier ? '= ?' : 'IS NULL'}`,
+          identifier ? [ kind, identifier ] : [ kind ],
+          (err, row) => {
+            if (err) {
+              reject({ error: err });
+            } else if (!row) {
+              resolve(null);
+            } else {
+              processGetValue(row.value, options).then((processedValue) => {
+                resolve(processedValue);
+              }).catch(reject);
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  },
+
+  getAll(kind, identifier = null, options = {}) {
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        database.all(
+          `SELECT kind, identifier, value FROM Signal WHERE kind = ?`,
+          [ kind ],
+          (err, rows) => {
+            if (err) {
+              reject({ error: err });
+            } else {
+              const processedResults = rows.map((row) => {
+                return processGetValue(row.value, options);
+              });
+
+              Promise.all(processedResults).then((processed) => {
+                resolve(processed);
+              }).catch(reject);
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  },
+
+  getMessages(parentId = null) {
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        database.all(
+          `SELECT data FROM Messages WHERE parentId ${parentId ? ' = ?' : 'IS NULL'}`,
+          parentId ? [ parentId ] : [],
+          (err, rows) => {
+            if (err) {
+              reject({ error: err });
+            } else {
+              const processedResults = rows.map((row) => {
+                return processGetValue(row.data, { json: true });
+              });
+
+              Promise.all(processedResults).then((processed) => {
+                resolve(processed);
+              }).catch(reject);
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  },
+
+  putMessage(message) {
+    return new Promise((resolve, reject) => {
+      Database.init().then((database) => {
+        processPutValue(message, { json: true }).then((processedValue) => {
           database.run(
-            `DELETE FROM Signal WHERE kind = ? AND identifier ${ identifier ? '= ?' : 'IS NULL'}`,
-            identifier ? [ kind, identifier ] : [ kind ],
+            'INSERT INTO Messages (id, parentId, data) VALUES (?, ?, ?)',
+            [ message.id, message.parentId || null, processedValue ],
             (err) => {
               if (err) {
                 reject({ error: err });
@@ -125,58 +226,8 @@ let Database = {
               }
             }
           );
-        });
-      });
-    });
-  },
-
-  get(kind, identifier = null, options = {}) {
-    return Database.init().then((database) => {
-      return new Promise((resolve, reject) => {
-        setImmediate(() => {
-          database.get(
-            `Select kind, identifier, value from Signal WHERE kind = ? AND identifier ${ identifier ? '= ?' : 'IS NULL'}`,
-            identifier ? [ kind, identifier ] : [ kind ],
-            (err, row) => {
-              if (err) {
-                reject({ error: err });
-              } else if (!row) {
-                resolve(null);
-              } else {
-                processGetValue(row.value, options).then((processedValue) => {
-                  resolve(processedValue);
-                }).catch(reject);
-              }
-            }
-          );
-        });
-      });
-    });
-  },
-
-  getAll(kind, options = {}) {
-    return Database.init().then((database) => {
-      return new Promise((resolve, reject) => {
-        setImmediate(() => {
-          database.all(
-            `Select kind, identifier, value from Signal WHERE kind = ?`,
-            [ kind ],
-            (err, rows) => {
-              if (err) {
-                reject({ error: err });
-              } else {
-                const processedResults = rows.map((row) => {
-                  return processGetValue(row.value, options);
-                });
-
-                Promise.all(processedResults).then((processed) => {
-                  resolve(processed);
-                }).catch(reject);
-              }
-            }
-          );
-        });
-      });
+        }).catch(reject);
+      }).catch(reject);
     });
   },
 

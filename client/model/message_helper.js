@@ -1,4 +1,5 @@
 const SignalStore = require('./signal_store.js');
+const Database = require('./database.js');
 const ServerIO = require('./server_io.js');
 
 const uuidV4 = require('uuid/v4');
@@ -8,7 +9,6 @@ const uuidV4 = require('uuid/v4');
 Message schema:
 
 {
-  id: <guid>,
   signalVersion: <1 or 3>,
   whispermailVersion: <string>,
   session: <email string>,
@@ -45,11 +45,10 @@ function sendIndividualMessage(message, recipient) {
 
       sessionCipher.encrypt(JSON.stringify(message)).then((encrypted) => {
         const data = {
-          id: message.id,
           signalVersion: encrypted.type,
           whispermailVersion: '1.0', // TODO: Pull from package JSON
           session: recipient.email,
-          data: btoa(encrypted.body)
+          data: encrypted.body
         };
 
         ServerIO.sendMessage(data).then(() => {
@@ -71,9 +70,8 @@ let MessageHelper = {
 
   1. Find or create sessions for each recipient
   2. Encrypt the message for each recipient
-  3. Have the server send the message for each recipient
-  4. Save the message send to the first recipient to the server. This will be our copy.
-  5. Update application state with our copy of the message.
+  3. Have the server send the message for each recipient.
+  4. Save the message to the DB
 
   */
 
@@ -104,13 +102,10 @@ let MessageHelper = {
           return sendIndividualMessage(json, recipient);
         });
 
-        Promise.all(sentMessages).then((messages) => {
-          const ourCopy = messages[0];
-
-          // DEBUG
-          window.data = ourCopy;
-
-          resolve(ourCopy);
+        MessageHelper.saveMessage(json).then(() => {
+          Promise.all(sentMessages).then((messages) => {
+            resolve(json);
+          }).catch(reject);
         }).catch(reject);
       }).catch(reject);
     });
@@ -162,9 +157,36 @@ let MessageHelper = {
         decryptor = sessionCipher.decryptWhisperMessage;
       }
 
-      decryptor(atob(message.data), 'binary').then((plaintext) => {
-        resolve(JSON.parse(SignalStore.helpers.toString(message)));
+      decryptor(message.data, 'binary').then((plaintext) => {
+        resolve(JSON.parse(SignalStore.helpers.toString(plaintext)));
       }).catch(reject);
+    });
+  },
+
+  saveMessage(message) {
+    return Database.putMessage(message);
+  },
+
+  // Deletes the message tree rooted at the message
+  deleteMessage() {
+    // TODO
+  },
+
+  getRootMessages() {
+    return Database.getMessages();
+  },
+
+  getMessageTree(message) {
+    return new Promise((resolve, reject) => {
+      Database.getMessages(message.id).then((replies) => {
+        message.replies = replies;
+
+        let promises = message.replies.map((message) => {
+          return MessageHelper.getMessageTree(message);
+        });
+
+        Promise.all(promises).then(() => resolve(message)).catch(reject);
+      });
     });
   }
 };

@@ -5,25 +5,21 @@ const ServerIO = {
 
   },
 
-  deregister() {
+  checkCredentials() {
 
   },
 
-  // STUBBED FOR TESTING PURPOSES
-  sendMessage(message) {
-    return Promise.resolve();
+  deregister() {
+
   },
 
   getMessages() {
 
   },
 
-  getMessageTree() {
-
-  },
-
-  remove() {
-
+  // STUBBED FOR TESTING PURPOSES
+  sendMessage(message) {
+    return Promise.resolve();
   },
 
   // STUBBED FOR TESTING PURPOSES
