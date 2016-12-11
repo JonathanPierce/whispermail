@@ -2,8 +2,9 @@
 
 const crypto = require('crypto');
 const SignalStore = require('./signal_store.js');
+const ServerIO = require('./server_io.js');
 
-const canaryValue = "MakeAmericaGreatAgain";
+const canaryValue = 'MakeAmericaGreatAgain';
 let derivedPassword = null;
 
 function validatePassword(attemptedPassword) {
@@ -85,12 +86,22 @@ let Authentication = {
                     options.name,
                     salt,
                     canaryCheck
-                  );
+                  ).then(() => {
+                    derivedPassword = derived;
 
-                  derivedPassword = derived;
+                    createNewSignalKeys().then(() => {
+                      ServerIO.register().then(() => {
+                        const promises = [];
+                        for (let i = 0; i < 20; i++) {
+                          promises.push(ServerIO.pushPreKey());
+                        }
+                        promises.push(ServerIO.pushSignedPreKey());
 
-                  createNewSignalKeys().then(() => {
-                    SignalStore.getLoginInfo().then(resolve).catch(reject);
+                        Promise.all(promises).then(() => {
+                          SignalStore.getLoginInfo().then(resolve).catch(reject);
+                        }).catch(reject);
+                      }).catch(reject);
+                    }).catch(reject);
                   }).catch(reject);
                 }).catch(reject);
               });

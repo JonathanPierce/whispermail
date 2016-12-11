@@ -10,6 +10,7 @@
     "electron-rebuild": "^1.4.0",
     "lodash": "^4.17.2",
     "long": "^3.2.0",
+    "node-fetch": "^1.6.3",
     "protobufjs": "^5.0.1",
     "react": "^15.4.0",
     "react-dom": "^15.4.0",

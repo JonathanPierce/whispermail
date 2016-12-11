@@ -1,6 +1,7 @@
 const SignalStore = require('./signal_store.js');
 const Database = require('./database.js');
 const ServerIO = require('./server_io.js');
+const packageJSON = require('../package.json');
 
 const uuidV4 = require('uuid/v4');
 
@@ -10,7 +11,6 @@ Message schema:
 
 {
   signalVersion: <1 or 3>,
-  whispermailVersion: <string>,
   session: <email string>,
   data: <base64 data>
 }
@@ -20,6 +20,7 @@ Data schema:
 {
   id: <guid>,
   parentId: <guid or null>,
+  whispermailVersion: <string>,
   subject: <string>, // only if parentId is null
   sent: <current time>
   from: {
@@ -46,7 +47,6 @@ function sendIndividualMessage(message, recipient) {
       sessionCipher.encrypt(JSON.stringify(message)).then((encrypted) => {
         const data = {
           signalVersion: encrypted.type,
-          whispermailVersion: '1.0', // TODO: Pull from package JSON
           session: recipient.email,
           data: encrypted.body
         };
@@ -86,6 +86,7 @@ let MessageHelper = {
 
         const json = {
           id,
+          whispermailVersion: packageJSON.version,
           from,
           sent: Date.now(),
           recipients,
@@ -158,7 +159,8 @@ let MessageHelper = {
       }
 
       decryptor(message.data, 'binary').then((plaintext) => {
-        resolve(JSON.parse(SignalStore.helpers.toString(plaintext)));
+        const parsedMessage = JSON.parse(SignalStore.helpers.toString(plaintext));
+        MessageHelper.saveMessage(parsedMessage).then(resolve).catch(reject);
       }).catch(reject);
     });
   },
