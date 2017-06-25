@@ -1,4 +1,4 @@
-const Authentication = require('/authentication.js');
+const Authentication = require('./authentication.js');
 const SignalStore = require('./signal-store.js');
 const ServerClient = require('./server-client.js');
 const MessageHandler = require('./message-handler.js');
@@ -26,11 +26,11 @@ class WhisperMail {
 
   createUser(password, loginInfo) {
     return new Promise((resolve, reject) => {
-      function destroyLoginInfo(err) {
+      const destroyLoginInfo = (err) => {
         this.authentication.destroyLoginInfo().then(() => {
           reject(err);
         }).catch(reject);
-      }
+      };
 
       this.hasUser().then((hasUser) => {
         if (hasUser) {
@@ -41,7 +41,7 @@ class WhisperMail {
           this.signalStore.createNewSignalKeys().then(() => {
             resolve();
 
-            // TODO: Register on the server, delete if fails
+            // TODO: Register on the server, generate prekeys, delete if fails
           }).catch(destroyLoginInfo);
         }).catch(reject);
       });

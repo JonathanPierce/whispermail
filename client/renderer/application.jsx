@@ -8,7 +8,7 @@ const SettingsPage = require('./pages/settings.js');
 
 class Application extends React.Component {
   componentWillMount() {
-    AppState.subscribe(this.rerender);
+    AppState.subscribe(this.rerender.bind(this));
   }
 
   rerender() {

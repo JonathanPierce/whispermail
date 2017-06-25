@@ -19,7 +19,7 @@ class Database {
         fs.openSync(this.path, 'w');
       }
 
-      this.database = new sqlite3.Database(location);
+      this.database = new sqlite3.Database(this.path);
 
       if (!exists) {
         return this.migrate(this.database).then(() => resolve(this.database)).catch(reject);

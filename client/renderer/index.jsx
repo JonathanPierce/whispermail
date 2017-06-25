@@ -10,11 +10,11 @@ require('../libsignal/dist/libsignal-protocol.js');
 require('../libsignal/dist/libsignal-protocol-worker.js');
 
 // React
-let React = require('react');
-let ReactDOM = require('react-dom');
+const React = require('react');
+const ReactDOM = require('react-dom');
 
 // Our stuff
-let Application = require('./application.js');
+const Application = require('./application.js');
 
 window.addEventListener('load', () => {
   ReactDOM.render(

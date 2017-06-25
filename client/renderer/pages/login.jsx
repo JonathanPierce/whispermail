@@ -25,7 +25,7 @@ class Login extends React.Component {
         };
       });
     }).catch((err) => {
-      alert(err);
+      console.log(err);
     });
   }
 
@@ -130,7 +130,7 @@ class Login extends React.Component {
               placeholder='server address (eg: mywhispermail.com)'
               type='text'
               value={ this.state.serverAddress }
-              onChange={ this.updateServerAddress }
+              onChange={ (e) => this.updateServerAddress(e) }
               maxLength={ 256 }
             ></input><br/>
 
@@ -139,7 +139,7 @@ class Login extends React.Component {
               placeholder='username (eg: superawesome123)'
               type='text'
               value={ this.state.username }
-              onChange={ this.updateUsername }
+              onChange={ (e) => this.updateUsername(e) }
               maxLength={ 50 }
             ></input><br/>
 
@@ -148,7 +148,7 @@ class Login extends React.Component {
               placeholder='name (eg: Donald J. Trump)'
               type='text'
               value={ this.state.name }
-              onChange={ this.updateName }
+              onChange={ (e) => this.updateName(e) }
               maxLength={ 100 }
             ></input><br/>
 
@@ -157,10 +157,10 @@ class Login extends React.Component {
               placeholder='password'
               type='password'
               value={ this.state.password }
-              onChange={ this.updatePassword }
+              onChange={ (e) => this.updatePassword(e) }
             ></input><br/>
 
-          <button onClick={ this.signUp } disabled={ !this.formComplete() }>sign up</button>
+          <button onClick={ () => this.signUp() } disabled={ !this.formComplete() }>sign up</button>
           </div>
           {
             (this.state.serverAddress && this.state.username) ? (
@@ -189,10 +189,10 @@ class Login extends React.Component {
               placeholder='password'
               type='password'
               value={ this.state.password }
-              onChange={ this.updatePassword }
+              onChange={ (e) => this.updatePassword(e) }
             ></input><br/>
 
-          <button onClick={ this.login } disabled={ !this.state.password.length }>log in</button>
+          <button onClick={ () => this.login() } disabled={ !this.state.password.length }>log in</button>
           </div>
           { errorMessage }
         </div>

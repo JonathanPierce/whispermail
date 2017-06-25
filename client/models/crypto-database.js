@@ -66,8 +66,8 @@ class CryptoDatabase extends Database {
     return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
         // Don't duplicate entries
-        Database.remove(kind, identifier, options).then(() => {
-          processPutValue(value, options).then((processedValue) => {
+        this.remove(kind, identifier, options).then(() => {
+          this.processPutValue(value, options).then((processedValue) => {
             database.run(
               'INSERT INTO Signal (kind, identifier, value) VALUES (?, ?, ?)',
               [ kind, identifier, processedValue ],
@@ -115,7 +115,7 @@ class CryptoDatabase extends Database {
             } else if (!row) {
               resolve(null);
             } else {
-              processGetValue(row.value, options).then((processedValue) => {
+              this.processGetValue(row.value, options).then((processedValue) => {
                 resolve(processedValue);
               }).catch(reject);
             }
@@ -136,7 +136,7 @@ class CryptoDatabase extends Database {
               reject(err);
             } else {
               const processedResults = rows.map((row) => {
-                return processGetValue(row.value, options);
+                return this.processGetValue(row.value, options);
               });
 
               Promise.all(processedResults).then((processed) => {
@@ -160,7 +160,7 @@ class CryptoDatabase extends Database {
               reject(err);
             } else {
               const processedResults = rows.map((row) => {
-                return processGetValue(row.data, { json: true });
+                return this.processGetValue(row.data, { json: true });
               });
 
               Promise.all(processedResults).then((processed) => {
@@ -176,7 +176,7 @@ class CryptoDatabase extends Database {
   putMessage(message) {
     return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
-        processPutValue(message, { json: true }).then((processedValue) => {
+        this.processPutValue(message, { json: true }).then((processedValue) => {
           database.run(
             'INSERT INTO Messages (id, parentId, data) VALUES (?, ?, ?)',
             [ message.id, message.parentId || null, processedValue ],

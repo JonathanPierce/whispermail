@@ -38,7 +38,7 @@ class Authentication extends Database {
       return Promise.resolve(this.loginInfo);
     }
 
-    return new Promse((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
         database.get('SELECT * FROM LoginInfo', (err, loginInfo) => {
           if (err) {
@@ -108,7 +108,7 @@ class Authentication extends Database {
         } else {
           resolve(salt.toString('base64'));
         }
-      );
+      });
     });
   }
 
@@ -162,7 +162,7 @@ class Authentication extends Database {
       ciphertext += cipher.final('base64');
       resolve(ciphertext);
     });
-  },
+  }
 
   decrypt(ciphertext, alternativeKey = null) {
     let key = alternativeKey || this.privateKey;

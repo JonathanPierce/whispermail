@@ -1,4 +1,4 @@
-const CryptoDatabase = require('./crypto-this.js');
+const CryptoDatabase = require('./crypto-database.js');
 const KeyHelper = libsignal.KeyHelper;
 
 // From libsignal's helper.js
@@ -61,7 +61,7 @@ class SignalStore extends CryptoDatabase {
 
 	generateIdentityKeyPair() {
 		return new Promise((resolve, reject) => {
-			KeyHelper.generateIdentityKeyPair().then(function(identityKeyPair) {
+			KeyHelper.generateIdentityKeyPair().then((identityKeyPair) => {
         this.saveIdentityKeyPair(identityKeyPair).then(resolve).catch(reject);
 			}).catch(reject);
 		});
@@ -222,7 +222,7 @@ class SignalStore extends CryptoDatabase {
 		return new Promise((resolve, reject) => {
 			this.getIdentityKeyPair().then((identityKeyPair) => {
 				this.incrementSignedPreKeyIndex().then((index) => {
-					KeyHelper.generateSignedPreKey(identityKeyPair, index).then(function(signedPreKey) {
+					KeyHelper.generateSignedPreKey(identityKeyPair, index).then((signedPreKey) => {
 			      this.storeSignedPreKey(signedPreKey.keyId, signedPreKey.keyPair).then(() => {
 							resolve(signedPreKey);
 						}).catch(reject);
