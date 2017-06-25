@@ -1,13 +1,23 @@
-let React = require('react');
+const React = require('react');
 
-let Authentication = require('../../model/authentication.js');
-let SignalStore = require('../../model/signal_store.js');
-let AppState = require('../../model/app_state.js');
-let packageInfo = require('../../package.json');
+const AppState = require('../../models/app-state.js');
+const WhisperMail = require('../../models/whispermail.js');
+const packageInfo = require('../../package.json');
 
-let Login = React.createClass({
+class Login extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      serverAddress: '',
+      username: '',
+      name: '',
+      password: ''
+    };
+  }
+
   componentDidMount() {
-    SignalStore.getLoginInfo().then((loginInfo) => {
+    WhisperMail.authentication.getLoginInfo().then((loginInfo) => {
       AppState.update((state) => {
         state.loginInfo = {
           status: loginInfo ? 'enterPassword' : 'signUp',
@@ -17,46 +27,31 @@ let Login = React.createClass({
     }).catch((err) => {
       alert(err);
     });
-  },
-
-  getInitialState() {
-    return {
-      serverAddress: '',
-      serverPort: '1337',
-      username: '',
-      name: '',
-      password: ''
-    };
-  },
+  }
 
   updateServerAddress(e) {
     this.setState({ serverAddress: e.target.value.replace(/\s/g, '') });
-  },
-
-  updateServerPort(e) {
-    this.setState({ serverPort: e.target.value.replace(/[^0-9]/g, '') });
-  },
+  }
 
   updateUsername(e) {
     this.setState({ username: e.target.value.replace(/[^0-9a-zA-Z_]/g, '') });
-  },
+  }
 
   updateName(e) {
     this.setState({ name: e.target.value });
-  },
+  }
 
   updatePassword(e) {
     this.setState({ password: e.target.value });
-  },
+  }
 
   signUp() {
     AppState.update((state) => {
       state.loginInfo.status = 'signingUp';
     });
 
-    Authentication.createLoginInfo(this.state.password, {
+    WhisperMail.createUser(this.state.password, {
       serverAddress: this.state.serverAddress,
-      serverPort: this.state.serverPort,
       username: this.state.username,
       name: this.state.name
     }).then((loginInfo) => {
@@ -74,14 +69,14 @@ let Login = React.createClass({
         state.loginInfo.error = 'could not sign up';
       });
     });
-  },
+  }
 
   login() {
     AppState.update((state) => {
       state.loginInfo.status = 'checkingPassword';
     });
 
-    Authentication.setPassword(this.state.password).then(() => {
+    WhisperMail.login(this.state.password).then(() => {
       AppState.update((state) => {
         state.loginInfo.status = 'loggedIn';
         state.page = 'mail';
@@ -93,17 +88,16 @@ let Login = React.createClass({
         this.setState({ password: '' });
       });
     });
-  },
+  }
 
   formComplete() {
     return (
       this.state.serverAddress.length &&
-      this.state.serverPort.length &&
       this.state.username.length &&
       this.state.name.length &&
       this.state.password.length
     );
-  },
+  }
 
   render() {
     let loginInfo = AppState.get('loginInfo');
@@ -138,15 +132,6 @@ let Login = React.createClass({
               value={ this.state.serverAddress }
               onChange={ this.updateServerAddress }
               maxLength={ 256 }
-            ></input><br/>
-
-            <input
-              className='serverPort'
-              placeholder='server port (eg: 1337)'
-              type='text'
-              value={ this.state.serverPort }
-              onChange={ this.updateServerPort }
-              maxLength={ 5 }
             ></input><br/>
 
             <input
@@ -233,6 +218,6 @@ let Login = React.createClass({
       </div>
     );
   }
-});
+}
 
 module.exports = Login;

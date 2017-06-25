@@ -5,7 +5,7 @@ const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 
 // Need global window references to prevent garbage collection
-var runningWindows = [];
+const runningWindows = [];
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -16,7 +16,7 @@ app.on('window-all-closed', function() {
   }
 });
 
-var createWindow = function() {
+const createWindow = function() {
     var newWindow = new BrowserWindow({width: 1024, height: 768}),
         index;
 

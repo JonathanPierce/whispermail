@@ -1,19 +1,19 @@
-let React = require('react');
+const React = require('react');
 
-let AppState = require('../model/app_state.js');
+const AppState = require('../models/app-state.js');
 
-let MailPage = require('./pages/mail.js');
-let LoginPage = require('./pages/login.js');
-let SettingsPage = require('./pages/settings.js');
+const MailPage = require('./pages/mail.js');
+const LoginPage = require('./pages/login.js');
+const SettingsPage = require('./pages/settings.js');
 
-let Application = React.createClass({
+class Application extends React.Component {
   componentWillMount() {
     AppState.subscribe(this.rerender);
-  },
+  }
 
   rerender() {
     this.forceUpdate();
-  },
+  }
 
   render() {
     let page = AppState.get('page');
@@ -30,6 +30,6 @@ let Application = React.createClass({
       );
     }
   }
-});
+}
 
 module.exports = Application;
