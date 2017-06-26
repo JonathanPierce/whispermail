@@ -1,5 +1,4 @@
 const SignalStore = require('./signal-store.js');
-const fetch = require('node-fetch');
 
 class ServerClient {
   constructor(signalStore) {
@@ -16,23 +15,29 @@ class ServerClient {
           username: loginInfo.username,
           method,
           payload
-        })
+        }),
+        headers: { 'content-type': 'application/json' }
       }).then((response) => {
         return response.json().then((challenge) => {
           return this.signalStore.getIdentityKeyPair().then((keyPair) => {
-            return libsignal.Curve.calculateSignature(
+            const signedChallenge = libsignal.Curve.calculateSignature(
               keyPair.privKey,
-              challenge.challenge
-            ).then((signedChallenge) => {
-              return fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({
-                  id: challenge.id,
-                  signedChallenge
-                })
-              }).then((response) => {
-                return response.json();
-              });
+              SignalStore.Helpers.toArrayBuffer(challenge.challenge, 'base64')
+            );
+
+            return fetch(url, {
+              method: 'POST',
+              body: JSON.stringify({
+                username: loginInfo.username,
+                method: 'challengeResponse',
+                payload: {
+                  challengeId: challenge.challengeId,
+                  signedChallenge: SignalStore.Helpers.toString(signedChallenge, 'base64')
+                }
+              }),
+              headers: { 'content-type': 'application/json' }
+            }).then((response) => {
+              return response.json();
             });
           });
         });
@@ -41,8 +46,8 @@ class ServerClient {
   }
 
   register(payload) {
-    return this.signalStore.getLoginInfo().then((loginInfo) => {
-      const url = `http://${loginInfo.serverAddress}:${loginInfo.serverPort}/register`; // TODO: Go HTTPS only
+    return this.signalStore.authentication.getLoginInfo().then((loginInfo) => {
+      const url = `http://${loginInfo.serverAddress}/register`; // TODO: Go HTTPS only
 
       return Promise.all([
         this.signalStore.getIdentityKeyPair(),
@@ -53,9 +58,10 @@ class ServerClient {
           body: JSON.stringify({
             username: loginInfo.username,
             name: loginInfo.name,
-            publicKey: SignalStore.Helpers.toString(results[0].pubKey),
+            publicKey: SignalStore.Helpers.toString(results[0].pubKey, 'base64'),
             registrationId: results[1]
-          })
+          }),
+          headers: { 'content-type': 'application/json' }
         }).then((response) => {
           return response.json();
         });
@@ -64,40 +70,40 @@ class ServerClient {
   }
 
   checkCredentials() {
-    return makeRequest('check');
+    return this.makeRequest('check');
   }
 
   deregister() {
-    return makeRequest('deregister');
+    return this.makeRequest('deregister');
   }
 
   getMessages(payload) {
-    return makeRequest('getMessages', payload);
+    return this.makeRequest('getMessages', payload);
   }
 
   sendMessage(payload) {
-    return makeRequest('sendMessage', payload);
+    return this.makeRequest('sendMessage', payload);
   }
 
   getRecipient(payload) {
-    return makeRequest('getRecipient', payload);
+    return this.makeRequest('getRecipient', payload);
   }
 
   pushPreKey() {
     return this.signalStore.generateNextPreKey().then((preKey) => {
-      return makeRequest('pushPreKey', {
+      return this.makeRequest('pushPreKey', {
         keyId: preKey.keyId,
-        publicKey: SignalStore.Helpers.toString(preKey.keyPair.pubKey)
+        publicKey: SignalStore.Helpers.toString(preKey.keyPair.pubKey, 'base64')
       });
     });
   }
 
   pushSignedPreKey() {
     return this.signalStore.generateNextSignedPreKey().then((preKey) => {
-      return makeRequest('pushSignedPreKey', {
+      return this.makeRequest('pushSignedPreKey', {
         keyId: preKey.keyId,
-        publicKey: SignalStore.Helpers.toString(preKey.keyPair.pubKey),
-        signature: SignalStore.Helpers.toString(preKey.signature)
+        publicKey: SignalStore.Helpers.toString(preKey.keyPair.pubKey, 'base64'),
+        signature: SignalStore.Helpers.toString(preKey.signature, 'base64')
       });
     });
   }

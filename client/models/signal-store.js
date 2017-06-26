@@ -4,15 +4,15 @@ const KeyHelper = libsignal.KeyHelper;
 // From libsignal's helper.js
 // Not publically exposed there, so copypasta here.
 const SignalHelpers = {
-  toString(thing) {
+  toString(thing, format) {
     if (typeof thing == 'string') {
       return thing;
     }
 
-    return new dcodeIO.ByteBuffer.wrap(thing).toString('binary');
+    return new dcodeIO.ByteBuffer.wrap(thing).toString(format || 'binary');
   },
 
-  toArrayBuffer(thing) {
+  toArrayBuffer(thing, format) {
     if (thing === undefined) {
       return undefined;
     }
@@ -32,7 +32,7 @@ const SignalHelpers = {
       throw new Error("Tried to convert a non-string of type " + typeof thing + " to an array buffer");
     }
 
-    return new dcodeIO.ByteBuffer.wrap(thing, 'binary').toArrayBuffer();
+    return new dcodeIO.ByteBuffer.wrap(thing, format || 'binary').toArrayBuffer();
   }
 };
 

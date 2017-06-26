@@ -1,5 +1,9 @@
 client/node_modules
+server/node_modules
 client/build
 client/login-info.db
 client/crypto-data.db
+server/config.json
+server/login-info.db
+server/server-data.db
 scripts/node_test.js

@@ -21,7 +21,9 @@ class WhisperMail {
 
   login(password) {
     // TODO: Check server authentication / connection
-    return this.authentication.login(password);
+    return this.authentication.login(password).then(() => {
+      return this.serverClient.checkCredentials();
+    });
   }
 
   createUser(password, loginInfo) {
@@ -39,9 +41,10 @@ class WhisperMail {
 
         this.authentication.createLoginInfo(password, loginInfo).then(() => {
           this.signalStore.createNewSignalKeys().then(() => {
-            resolve();
-
-            // TODO: Register on the server, generate prekeys, delete if fails
+            this.serverClient.register().then(() => {
+              // TODO: Generate prekeys
+              resolve();
+            }).catch(destroyLoginInfo);
           }).catch(destroyLoginInfo);
         }).catch(reject);
       });
