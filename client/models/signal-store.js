@@ -1,4 +1,5 @@
 const CryptoDatabase = require('./crypto-database.js');
+const nacl = require('tweetnacl');
 const KeyHelper = libsignal.KeyHelper;
 
 // From libsignal's helper.js
@@ -266,6 +267,37 @@ class SignalStore extends CryptoDatabase {
 
   removeSession(identifier) {
   	return this.remove('session', identifier);
+  }
+
+  generateApiKeyPair() {
+    return new Promise((resolve, reject) => {
+      const apiKeys = nacl.sign.keyPair();
+
+      this.put('apiKeys', null, {
+        pubKey: SignalHelpers.toString(apiKeys.publicKey),
+        privKey: SignalHelpers.toString(apiKeys.secretKey)
+      }, { json: true }).then(() => {
+        resolve({
+          pubKey: apiKeys.publicKey,
+          privKey: apiKeys.secretKey
+        });
+      }).catch(reject);
+    });
+  }
+
+  getApiKeyPair() {
+    return new Promise((resolve, reject) => {
+      return this.get('apiKeys', null, { json: true }).then((result) => {
+        if (result) {
+          resolve({
+            pubKey: SignalHelpers.toArrayBuffer(result.pubKey),
+            privKey: SignalHelpers.toArrayBuffer(result.privKey)
+          });
+        } else {
+          resolve(null);
+        }
+      }).catch(reject);
+    });
   }
 }
 

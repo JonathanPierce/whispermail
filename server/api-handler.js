@@ -17,7 +17,6 @@ class ApiHandler {
       };
 
       const flushError = (err) => {
-        console.log(err);
         this.res.status(400).end();
         reject();
       };
@@ -44,12 +43,8 @@ class ApiHandler {
     return new Promise((resolve, reject) => {
       const payload = this.body.payload;
 
-      console.log('payload', payload);
-
       if (payload && payload.challengeId && payload.signedChallenge) {
         this.database.get(this.body.username, 'requests', payload.challengeId, { json: true }).then((request) => {
-          console.log('request', request);
-
           if (request) {
             this.verifySignature(info, request.challenge, payload.signedChallenge).then(() => {
               const methodHandler = this[request.method];
@@ -72,22 +67,19 @@ class ApiHandler {
   }
 
   verifySignature(info, challenge, signedChallenge) {
-    return Promise.resolve();
-
-    // TODO: Fix this
     return new Promise((resolve, reject) => {
       const challengeBuffer = Buffer.from(challenge, 'base64');
       const signedChallengeBuffer = Buffer.from(signedChallenge, 'base64');
-      const publicKeyBuffer = Buffer.from(info.publicKey, 'base64').slice(1);
+      const publicKeyBuffer = Buffer.from(info.apiPublicKey, 'base64');
 
-      nacl.sign.secretKeyLength = 32;
+      console.log(info.apiPublicKey);
+      console.log(signedChallenge);
+
       const signatureValid = nacl.sign.detached.verify(
         challengeBuffer,
         signedChallengeBuffer,
         publicKeyBuffer
       );
-
-      console.log(signatureValid);
 
       if (signatureValid) {
         resolve();
@@ -116,10 +108,10 @@ class ApiHandler {
         this.database.put(this.body.username, 'requests', challengeId, request, { json: true }).then(() => {
           resolve(response);
 
-          // Remove the pending request after 5 seconds
+          // Remove the pending request after 2 seconds
           setTimeout(() => {
             this.database.remove(this.body.username, 'requests', challengeId);
-          }, 5000);
+          }, 2000);
         }).catch(reject);
       });
     });

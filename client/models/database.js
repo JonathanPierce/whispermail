@@ -9,24 +9,37 @@ class Database {
 
   getDatabase() {
     if (this.database) {
+      console.log('returning cached db');
       return Promise.resolve(this.database);
     }
 
-    return new Promise((resolve, reject) => {
+    if (this.migratePromise) {
+      console.log('returning cached promise');
+      return this.migratePromise;
+    }
+
+    this.migratePromise = new Promise((resolve, reject) => {
       const exists = fs.existsSync(this.path);
 
       if (!exists) {
         fs.openSync(this.path, 'w');
       }
 
-      this.database = new sqlite3.Database(this.path);
+      const database = new sqlite3.Database(this.path);
 
       if (!exists) {
-        return this.migrate(this.database).then(() => resolve(this.database)).catch(reject);
+        return this.migrate(database).then(() => {
+          this.migratePromise = null;
+          this.database = database;
+          resolve(database);
+        }).catch(reject);
       }
 
-      resolve(this.database);
+      this.database = database;
+      resolve(database);
     });
+
+    return this.migratePromise;
   }
 
   migrate(database) {

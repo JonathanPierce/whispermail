@@ -28,14 +28,19 @@ function start() {
   });
 
   app.post('/register', (req, res) => {
-    console.log(req.body);
-
-    if (req.body.username && req.body.name && req.body.publicKey && req.body.registrationId) {
+    if (
+      req.body.username &&
+      req.body.name &&
+      req.body.publicKey &&
+      req.body.registrationId &&
+      req.body.apiPublicKey
+    ) {
       const data = {
         username: req.body.username,
         name: req.body.name,
         publicKey: req.body.publicKey,
-        registrationId: req.body.registrationId
+        registrationId: req.body.registrationId,
+        apiPublicKey: req.body.apiPublicKey
       };
 
       database.getInfo(data.username).then((info) => {
@@ -57,7 +62,11 @@ function start() {
 
   // client-server code goes here
   app.post('/api', (req, res) => {
-    new ApiHandler(req, res, database).handle();
+    new ApiHandler(req, res, database).handle().then(() => {
+      console.log('api request handled');
+    }).catch((e) => {
+      console.log('api error', e);
+    });
   });
 
   // server-server code goes here

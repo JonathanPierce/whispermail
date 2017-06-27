@@ -40,7 +40,10 @@ class WhisperMail {
         }
 
         this.authentication.createLoginInfo(password, loginInfo).then(() => {
-          this.signalStore.createNewSignalKeys().then(() => {
+          Promise.all([
+            this.signalStore.createNewSignalKeys(),
+            this.signalStore.generateApiKeyPair()
+          ]).then(() => {
             this.serverClient.register().then(() => {
               // TODO: Generate prekeys
               resolve();

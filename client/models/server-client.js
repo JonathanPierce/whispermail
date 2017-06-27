@@ -1,4 +1,5 @@
 const SignalStore = require('./signal-store.js');
+const nacl = require('tweetnacl');
 
 class ServerClient {
   constructor(signalStore) {
@@ -19,10 +20,12 @@ class ServerClient {
         headers: { 'content-type': 'application/json' }
       }).then((response) => {
         return response.json().then((challenge) => {
-          return this.signalStore.getIdentityKeyPair().then((keyPair) => {
-            const signedChallenge = libsignal.Curve.calculateSignature(
-              keyPair.privKey,
-              SignalStore.Helpers.toArrayBuffer(challenge.challenge, 'base64')
+          return this.signalStore.getApiKeyPair().then((keyPair) => {
+            const signedChallenge = nacl.sign.detached(
+              new Uint8Array(
+                SignalStore.Helpers.toArrayBuffer(challenge.challenge, 'base64')
+              ),
+              new Uint8Array(keyPair.privKey)
             );
 
             return fetch(url, {
@@ -51,6 +54,7 @@ class ServerClient {
 
       return Promise.all([
         this.signalStore.getIdentityKeyPair(),
+        this.signalStore.getApiKeyPair(),
         this.signalStore.getLocalRegistrationId()
       ]).then((results) => {
         return fetch(url, {
@@ -59,7 +63,8 @@ class ServerClient {
             username: loginInfo.username,
             name: loginInfo.name,
             publicKey: SignalStore.Helpers.toString(results[0].pubKey, 'base64'),
-            registrationId: results[1]
+            registrationId: results[2],
+            apiPublicKey: SignalStore.Helpers.toString(results[1].pubKey, 'base64')
           }),
           headers: { 'content-type': 'application/json' }
         }).then((response) => {
