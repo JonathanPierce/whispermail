@@ -9,6 +9,7 @@ const bodyParser = require('body-parser');
 const ServerAuthentication = require('./server-authentication.js');
 const ServerDatabase = require('./server-database.js');
 const ApiHandler = require('./api-handler.js');
+const { InteropReceiver } = require('./interop.js');
 
 const authentication = new ServerAuthentication();
 const database = new ServerDatabase(authentication);
@@ -71,9 +72,11 @@ function start() {
 
   // server-server code goes here
   app.post('/interop', (req, res) => {
-    // 1. Check for basic schema match. Reject if email not from correct server.
-    // 2. Check if user exists
-    // 3. Hand over to interop helper
+    new InteropReceiver(req, res, database).handle().then(() => {
+      console.log('interop request handled');
+    }).catch((e) => {
+      console.log('interop error', e);
+    });
   });
 
   app.listen(config.port);

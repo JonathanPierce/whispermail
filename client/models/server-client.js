@@ -82,16 +82,16 @@ class ServerClient {
     return this.makeRequest('deregister');
   }
 
-  getMessages(payload) {
-    return this.makeRequest('getMessages', payload);
+  getMessages() {
+    return this.makeRequest('getMessages');
   }
 
-  sendMessage(payload) {
-    return this.makeRequest('sendMessage', payload);
+  sendMessage(message) {
+    return this.makeRequest('sendMessage', message);
   }
 
-  getRecipient(payload) {
-    return this.makeRequest('getRecipient', payload);
+  getRecipient(recipient) {
+    return this.makeRequest('getRecipient', { recipient });
   }
 
   pushPreKey() {

@@ -9,12 +9,10 @@ class Database {
 
   getDatabase() {
     if (this.database) {
-      console.log('returning cached db');
       return Promise.resolve(this.database);
     }
 
     if (this.migratePromise) {
-      console.log('returning cached promise');
       return this.migratePromise;
     }
 

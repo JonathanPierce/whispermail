@@ -1,16 +1,4 @@
-/*
-
-CRYPTO SCHEMA:
-
-user, TEXT
-kind, TEXT
-identifier, TEXT
-value, BLOB
-
-Password canary: SERVER, ADMIN_CANARY, null, <canary value>
-Request <username>, REQUEST, <challenge>, <original_request>
-
-*/
+const _ = require('lodash');
 
 const Database = require('../client/models/database.js');
 
@@ -93,7 +81,37 @@ class ServerDatabase extends Database {
     return this.get(username, 'info', null, { json: true });
   }
 
-  getAll(username, kind, identifier = null, options = {}) {
+  getPreKey(username) {
+    return new Promise((resolve, reject) => {
+      this.getAll(username, 'preKey', { json: true }).then((preKeys) => {
+        if (preKeys.length) {
+          const preKey = _.first(preKeys);
+
+          // preKeys are only used once
+          this.remove(username, 'preKey', preKey.keyId).then(() => {
+            resolve(preKey);
+          }).catch(reject);
+        } else {
+          // the one-time preKey is optional
+          resolve(null);
+        }
+      }).catch(reject);
+    });
+  }
+
+  getSignedPreKey(username) {
+    return new Promise((resolve, reject) => {
+      this.getAll(username, 'signedPreKey', { json: true }).then((signedPreKeys) => {
+        if (signedPreKeys.length) {
+          resolve(_.last(signedPreKeys));
+        } else {
+          reject('no signed preKey found');
+        }
+      }).catch(reject);
+    });
+  }
+
+  getAll(username, kind, options = {}) {
     return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
         database.all(

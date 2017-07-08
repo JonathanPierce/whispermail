@@ -1,13 +1,16 @@
 const packageJSON = require('../package.json');
 const uuidV4 = require('uuid/v4');
 
+const SignalStore = require('./signal-store.js');
+
 /*
 
 Message schema:
 
 {
   signalVersion: <1 or 3>,
-  session: <email string>,
+  recipient: <email string>,
+  id: <guid string>,
   data: <base64 data>
 }
 
@@ -53,11 +56,11 @@ class MessageHelper {
 
   sendMessage(parentId, message, recipients, subject = '') {
     return new Promise((resolve, reject) => {
-      SignalStore.getLoginInfo().then((loginInfo) => {
+      tis.signalStore.getLoginInfo().then((loginInfo) => {
         const id = uuidV4();
         const from = {
           name: loginInfo.name,
-          email: getEmail(loginInfo)
+          email: this.getEmail(loginInfo)
         };
 
         const json = {
@@ -76,7 +79,7 @@ class MessageHelper {
         }
 
         const sentMessages = recipients.map((recipient) => {
-          return sendIndividualMessage(json, recipient);
+          return this.sendIndividualMessage(json, recipient);
         });
 
         this.saveMessage(json).then(() => {
@@ -92,13 +95,14 @@ class MessageHelper {
     return new Promise((resolve, reject) => {
       this.establishRecipientSession(recipient.email).then(() => {
         const address = new libsignal.SignalProtocolAddress(recipient.email, '0');
-        const sessionCipher = new libsignal.SessionCipher(SignalStore, address);
+        const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
 
         sessionCipher.encrypt(JSON.stringify(message)).then((encrypted) => {
           const data = {
             signalVersion: encrypted.type,
-            session: recipient.email,
-            data: encrypted.body
+            recipient: recipient.email,
+            data: encrypted.body,
+            id: message.id // TODO: bad idea to use message id? Just need unique key for server.
           };
 
           this.serverClient.sendMessage(data).then(() => {
@@ -116,8 +120,8 @@ class MessageHelper {
   // Reuse existing or fetch info from server to establish new
   establishRecipientSession(email) {
     const address = new libsignal.SignalProtocolAddress(email, '0');
-    const sessionCipher = new libsignal.SessionCipher(SignalStore, address);
-    const sessionBuilder = new libsignal.SessionBuilder(SignalStore, address);
+    const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
+    const sessionBuilder = new libsignal.SessionBuilder(this.signalStore, address);
 
     return new Promise((resolve, reject) => {
       sessionCipher.hasOpenSession().then((hasOpenSession) => {
@@ -133,7 +137,7 @@ class MessageHelper {
                 publicKey: recipientInfo.signedPreKey.publicKey,
                 signature: recipientInfo.signedPreKey.signature
               },
-              preKey: {
+              preKey: { // TODO: Handle this being null
                 keyId: recipientInfo.preKey.keyId,
                 publicKey: recipientInfo.preKey.publicKey
               }
@@ -150,7 +154,7 @@ class MessageHelper {
   handleMessage(message) {
     return new Promise((resolve, reject) => {
       const address = new libsignal.SignalProtocolAddress(message.session, '0');
-      const sessionCipher = new libsignal.SessionCipher(SignalStore, address);
+      const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
 
       let decryptor;
       if (message.signalVersion === 3) {
