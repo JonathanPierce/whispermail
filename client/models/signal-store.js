@@ -206,10 +206,8 @@ class SignalStore extends CryptoDatabase {
         };
 
         this.get('preKeyIndex').then((index) => {
-          console.log('rawIndex', index);
   				index = index || 0;
   				index = parseInt(index, 10);
-          console.log('index', index);
   				this.put('preKeyIndex', null, (index + 1).toString()).then(() => {
             release();
   					resolve(index);
@@ -313,6 +311,14 @@ class SignalStore extends CryptoDatabase {
         }
       }).catch(reject);
     });
+  }
+
+  getRecipientInfo(email) {
+    return this.get('recipientInfo', email, { json: true });
+  }
+
+  saveRecipientInfo(email, info) {
+    return this.put('recipientInfo', email, info, { json: true });
   }
 }
 

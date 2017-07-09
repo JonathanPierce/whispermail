@@ -1,5 +1,6 @@
 const SignalStore = require('./signal-store.js');
 const nacl = require('tweetnacl');
+const _ = require('lodash');
 
 class ServerClient {
   constructor(signalStore) {
@@ -74,16 +75,21 @@ class ServerClient {
     });
   }
 
-  checkCredentials() {
+  check() {
     return this.makeRequest('check');
   }
 
   deregister() {
-    return this.makeRequest('deregister');
+    return this.makeRequest('deregister'); // TODO
   }
 
   getMessages() {
-    return this.makeRequest('getMessages');
+    return this.makeRequest('getMessages').then((messages) => {
+      return _.map(messages, (message) => {
+        message.data = SignalStore.Helpers.toArrayBuffer(message.data, 'base64');
+        return message;
+      });
+    });
   }
 
   sendMessage(message) {
@@ -91,7 +97,28 @@ class ServerClient {
   }
 
   getRecipient(recipient) {
-    return this.makeRequest('getRecipient', { recipient });
+    return this.makeRequest('getRecipient', { recipient }).then((result) => {
+      const recipientInfo = {
+        name: result.name,
+        registrationId: result.registrationId,
+        identityKey: SignalStore.Helpers.toArrayBuffer(result.identityKey, 'base64'),
+        signedPreKey: {
+          keyId: result.signedPreKey.keyId,
+          publicKey: SignalStore.Helpers.toArrayBuffer(result.signedPreKey.publicKey, 'base64'),
+          signature: SignalStore.Helpers.toArrayBuffer(result.signedPreKey.signature, 'base64')
+        },
+        preKey: null
+      };
+
+      if (result.preKey) {
+        recipientInfo.preKey = {
+          keyId: result.preKey.keyId,
+          publicKey: SignalStore.Helpers.toArrayBuffer(result.preKey.publicKey, 'base64')
+        }
+      }
+
+      return recipientInfo;
+    });
   }
 
   pushPreKey() {

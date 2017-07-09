@@ -31,7 +31,7 @@ class InteropSender {
   }
 
   sendMessage(message) {
-    return fetch(`http://${getServer(message.session)}/interop`, {
+    return fetch(`http://${getServer(message.recipient)}/interop`, {
       method: 'POST',
       body: JSON.stringify({
         method: METHODS.SEND_MESSAGE,
@@ -127,8 +127,9 @@ class InteropReceiver {
         if (info) {
           const message = {
             signalVersion: this.body.payload.signalVersion,
-            recipient: this.body.recipient,
-            data: this.body.payload.data
+            recipient: this.body.payload.recipient,
+            data: this.body.payload.data,
+            id: this.body.payload.id
           };
 
           this.database.put(

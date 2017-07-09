@@ -20,7 +20,6 @@ class WhisperMail {
   }
 
   login(password) {
-    // TODO: Check server authentication / connection
     return this.authentication.login(password).then(() => {
       return this.messageHandler.check();
     });

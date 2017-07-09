@@ -57,7 +57,7 @@ class MessageHelper {
 
   sendMessage(parentId, message, recipients, subject = '') {
     return new Promise((resolve, reject) => {
-      tis.signalStore.getLoginInfo().then((loginInfo) => {
+      this.signalStore.authentication.getLoginInfo().then((loginInfo) => {
         const id = uuidV4();
         const from = {
           name: loginInfo.name,
@@ -102,8 +102,11 @@ class MessageHelper {
           const data = {
             signalVersion: encrypted.type,
             recipient: recipient.email,
-            data: encrypted.body,
-            id: message.id // TODO: bad idea to use message id? Just need unique key for server.
+            data: SignalStore.Helpers.toString(
+              SignalStore.Helpers.toArrayBuffer(encrypted.body),
+              'base64'
+            ),
+            id: message.id
           };
 
           this.serverClient.sendMessage(data).then(() => {
@@ -138,23 +141,40 @@ class MessageHelper {
                 publicKey: recipientInfo.signedPreKey.publicKey,
                 signature: recipientInfo.signedPreKey.signature
               },
-              preKey: { // TODO: Handle this being null
+              preKey: {} // keyId and publicKey are undefined
+            };
+
+            if (recipientInfo.preKey) {
+              input.preKey = {
                 keyId: recipientInfo.preKey.keyId,
                 publicKey: recipientInfo.preKey.publicKey
               }
-            };
+            }
 
-            sessionBuilder.processPreKey(input).then(resolve).catch(reject);
+            sessionBuilder.processPreKey(input).then(() => {
+              this.signalStore.saveRecipientInfo(email, {
+                name: recipientInfo.name,
+                verifiedFingerprint: false
+              }).then(resolve).catch(reject);
+            }).catch(reject);
           }).catch(reject);
         }
       }).catch(reject);
     });
   }
 
+  getNewMessages() {
+    this.serverClient.getMessages().then((messages) => {
+      return Promise.all(
+        _.map(messages, (message) => this.handleMessage(message))
+      );
+    });
+  }
+
   // Decrypt a message from the server
   handleMessage(message) {
     return new Promise((resolve, reject) => {
-      const address = new libsignal.SignalProtocolAddress(message.session, '0');
+      const address = new libsignal.SignalProtocolAddress(message.recipient, '0');
       const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
 
       let decryptor;
@@ -199,7 +219,7 @@ class MessageHelper {
   }
 
   check() {
-    return this.serverClient.checkCredentials().then((check) => {
+    return this.serverClient.check().then((check) => {
       const promises = [];
 
       if (check.sendPreKeys) {
