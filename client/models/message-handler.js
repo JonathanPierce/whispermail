@@ -1,5 +1,6 @@
 const packageJSON = require('../package.json');
 const uuidV4 = require('uuid/v4');
+const _ = require('lodash');
 
 const SignalStore = require('./signal-store.js');
 
@@ -195,6 +196,31 @@ class MessageHelper {
         Promise.all(promises).then(() => resolve(message)).catch(reject);
       });
     });
+  }
+
+  check() {
+    return this.serverClient.checkCredentials().then((check) => {
+      const promises = [];
+
+      if (check.sendPreKeys) {
+        promises.push(this.pushPreKeys(25));
+      }
+
+      if (check.sendSignedPreKey) {
+        promises.push(this.pushSignedPreKey());
+      }
+
+      return Promise.all(promises);
+    });
+  }
+
+  pushPreKeys(count) {
+    const promises = _.times(count, () => this.serverClient.pushPreKey());
+    return Promise.all(promises);
+  }
+
+  pushSignedPreKey() {
+    return this.serverClient.pushSignedPreKey();
   }
 }
 

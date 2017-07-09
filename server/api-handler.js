@@ -121,10 +121,10 @@ class ApiHandler {
         this.database.put(this.body.username, 'requests', challengeId, request, { json: true }).then(() => {
           resolve(response);
 
-          // Remove the pending request after 1 second
+          // Remove the pending request after 10 seconds
           setTimeout(() => {
             this.database.remove(this.body.username, 'requests', challengeId);
-          }, 1000);
+          }, 10000);
         }).catch(reject);
       });
     });
@@ -136,9 +136,30 @@ class ApiHandler {
 
   // methods
   check() {
-    return Promise.resolve({
-      valid: true,
-      serverVersion: packageJSON.version
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.database.getAll(this.body.username, 'preKey', { json: true }),
+        this.database.getSignedPreKey(this.body.username)
+      ]).then((preKeys) => {
+        const preKeyCount = preKeys[0].length;
+
+        if (preKeys[1] === null) {
+          return reject('missing signed preKey');
+        }
+
+        const signedKeyAge = Date.now() - new Date(preKeys[1].savedAt).getTime();
+        const threeMonths = 1000 * 30 * 3 * 60 * 60 * 24;
+
+        const response = {
+          valid: true,
+          serverVersion: packageJSON.version
+        }
+
+        response.sendPreKeys = preKeyCount < 10;
+        response.sendSignedPreKey = signedKeyAge > threeMonths;
+
+        resolve(response);
+      }).catch(reject);
     });
   }
 
@@ -159,42 +180,42 @@ class ApiHandler {
     });
   }
 
-  sendMessage() {
+  sendMessage(payload) {
     if (
-      !this.body.payload.signalVersion ||
-      !this.body.payload.recipient ||
-      !this.body.payload.data ||
-      !this.body.payload.id
+      !payload.signalVersion ||
+      !payload.recipient ||
+      !payload.data ||
+      !payload.id
     ) {
       return Promise.reject('message has incorrect format');
     }
 
     const message = {
-      signalVersion: this.body.payload.signalVersion,
-      recipient: this.body.payload.recipient,
-      data: this.body.payload.data,
-      id: this.body.payload.id
+      signalVersion: payload.signalVersion,
+      recipient: payload.recipient,
+      data: payload.data,
+      id: payload.id
     };
 
     return this.sender.sendMessage(message);
   }
 
-  getRecipient() {
-    if (!this.body.payload.recipient) {
+  getRecipient(payload) {
+    if (!payload.recipient) {
       return Promise.reject('no recipient specified');
     }
 
-    return this.sender.getRecipient(this.body.payload.recipient);
+    return this.sender.getRecipient(payload.recipient);
   }
 
-  pushPreKey() {
-    if (!this.body.payload.keyId || !this.body.payload.publicKey) {
+  pushPreKey(payload) {
+    if (payload.keyId == null || !payload.publicKey) {
       return Promise.reject('requires keyId and publicKey');
     }
 
-    const payload = {
-      keyId: this.body.payload.keyId,
-      publicKey: this.body.payload.publicKey
+    const preKey = {
+      keyId: payload.keyId,
+      publicKey: payload.publicKey
     };
 
     return new Promise((resolve, reject) => {
@@ -202,7 +223,7 @@ class ApiHandler {
         this.body.username,
         'preKey',
         payload.keyId,
-        payload,
+        preKey,
         { json: true }
       ).then(() => {
         resolve({ success: true });
@@ -210,30 +231,33 @@ class ApiHandler {
     });
   }
 
-  pushSignedPreKey() {
+  pushSignedPreKey(payload) {
     if (
-      !this.body.payload.keyId ||
-      !this.body.payload.publicKey ||
-      !this.body.payload.signature
+      payload.keyId == null ||
+      !payload.publicKey ||
+      !payload.signature
     ) {
       return Promise.reject('requires keyId, publicKey, and signature');
     }
 
-    const payload = {
-      keyId: this.body.payload.keyId,
-      publicKey: this.body.payload.publicKey,
-      signature: this.body.payload.signature
+    const signedPreKey = {
+      keyId: payload.keyId,
+      publicKey: payload.publicKey,
+      signature: payload.signature,
+      savedAt: new Date().toJSON()
     };
 
     return new Promise((resolve, reject) => {
-      this.database.put(
-        this.body.username,
-        'signedPreKey',
-        payload.keyId,
-        payload,
-        { json: true }
-      ).then(() => {
-        resolve({ success: true });
+      this.database.remove(this.body.username, 'signedPreKey').then(() => {
+        this.database.put(
+          this.body.username,
+          'signedPreKey',
+          payload.keyId,
+          signedPreKey,
+          { json: true }
+        ).then(() => {
+          resolve({ success: true });
+        }).catch(reject);
       }).catch(reject);
     });
   }

@@ -22,7 +22,7 @@ class WhisperMail {
   login(password) {
     // TODO: Check server authentication / connection
     return this.authentication.login(password).then(() => {
-      return this.serverClient.checkCredentials();
+      return this.messageHandler.check();
     });
   }
 
@@ -45,8 +45,10 @@ class WhisperMail {
             this.signalStore.generateApiKeyPair()
           ]).then(() => {
             this.serverClient.register().then(() => {
-              // TODO: Generate prekeys
-              resolve();
+              Promise.all([
+                this.messageHandler.pushPreKeys(25),
+                this.messageHandler.pushSignedPreKey()
+              ]).then(() => resolve()).catch(reject);
             }).catch(destroyLoginInfo);
           }).catch(destroyLoginInfo);
         }).catch(reject);

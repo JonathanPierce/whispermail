@@ -94,6 +94,7 @@ class InteropReceiver {
             const signedPreKey = preKeys[1];
 
             const response = {
+              name: info.name,
               registrationId: info.registrationId,
               identityKey: info.publicKey,
               signedPreKey: signedPreKey,

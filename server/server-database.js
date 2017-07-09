@@ -103,6 +103,7 @@ class ServerDatabase extends Database {
     return new Promise((resolve, reject) => {
       this.getAll(username, 'signedPreKey', { json: true }).then((signedPreKeys) => {
         if (signedPreKeys.length) {
+          // There should technically only be one...
           resolve(_.last(signedPreKeys));
         } else {
           reject('no signed preKey found');

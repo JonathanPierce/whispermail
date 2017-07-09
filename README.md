@@ -3,9 +3,6 @@ An easy to use, decentralized, end-to-end encrypted email analogue based on the 
 
 ## TODO
 
-- Server interop / update message schema
-- Storing PreKeys on registration
-- PreKey/SignedPreKey replenishment
 - Finish any in-code TODOs (deleting, etc...)
 - Initial cross-server local testing
 - HTTPS support (while keeping local dev)

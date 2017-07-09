@@ -40,6 +40,23 @@ const SignalHelpers = {
 class SignalStore extends CryptoDatabase {
   constructor(authentication) {
     super(authentication);
+    this.lockQueue = [];
+  }
+
+  getLock(callback) {
+    this.lockQueue.push(callback);
+
+    const release = () => {
+      this.lockQueue.shift();
+
+      if (this.lockQueue.length) {
+        this.lockQueue[0](release);
+      }
+    };
+
+    if (this.lockQueue.length === 1) {
+      callback(release);
+    }
   }
 
   getIdentityKeyPair() {
@@ -182,13 +199,23 @@ class SignalStore extends CryptoDatabase {
 
 	incrementPreKeyIndex() {
 		return new Promise((resolve, reject) => {
-			this.get('preKeyIndex').then((index) => {
-				index = index || 0;
-				index = parseInt(index, 10);
-				this.put('preKeyIndex', null, (index + 1).toString()).then(() => {
-					resolve(index);
-				}).catch(reject);
-			}).catch(reject);
+      this.getLock((release) => {
+        const handleReject = (e) => {
+          release();
+          reject(e);
+        };
+
+        this.get('preKeyIndex').then((index) => {
+          console.log('rawIndex', index);
+  				index = index || 0;
+  				index = parseInt(index, 10);
+          console.log('index', index);
+  				this.put('preKeyIndex', null, (index + 1).toString()).then(() => {
+            release();
+  					resolve(index);
+  				}).catch(handleReject);
+  			}).catch(handleReject);
+      });
 		});
 	}
 
@@ -222,24 +249,12 @@ class SignalStore extends CryptoDatabase {
 	generateNextSignedPreKey() {
 		return new Promise((resolve, reject) => {
 			this.getIdentityKeyPair().then((identityKeyPair) => {
-				this.incrementSignedPreKeyIndex().then((index) => {
+				this.incrementPreKeyIndex().then((index) => {
 					KeyHelper.generateSignedPreKey(identityKeyPair, index).then((signedPreKey) => {
 			      this.storeSignedPreKey(signedPreKey.keyId, signedPreKey.keyPair).then(() => {
 							resolve(signedPreKey);
 						}).catch(reject);
 					}).catch(reject);
-				}).catch(reject);
-			}).catch(reject);
-		});
-	}
-
-	incrementSignedPreKeyIndex() {
-		return new Promise((resolve, reject) => {
-			this.get('preKeyIndex').then((index) => {
-				index = index || 0;
-				index = parseInt(index, 10);
-				this.put('preKeyIndex', null, (index + 1).toString()).then(() => {
-					resolve(index);
 				}).catch(reject);
 			}).catch(reject);
 		});
