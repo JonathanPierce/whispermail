@@ -187,7 +187,7 @@ class MessageHelper {
       }
 
       decryptor(message.data, 'binary').then((plaintext) => {
-        const parsedMessage = JSON.parse(SignalStore.helpers.toString(plaintext));
+        const parsedMessage = JSON.parse(SignalStore.Helpers.toString(plaintext));
         this.saveMessage(parsedMessage).then(resolve).catch(reject);
       }).catch(reject);
     });

@@ -1,8 +1,8 @@
 const Database = require('./database.js');
 
 class CryptoDatabase extends Database {
-  constructor(authentication) {
-    super('./crypto-data.db');
+  constructor(authentication, alternativePath = null) {
+    super(alternativePath || './crypto-data.db');
     this.authentication = authentication;
   }
 

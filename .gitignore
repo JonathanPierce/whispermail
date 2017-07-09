@@ -7,3 +7,5 @@ server/config.json
 server/login-info.db
 server/server-data.db
 scripts/node_test.js
+client/test/store-one.db
+client/test/store-two.db

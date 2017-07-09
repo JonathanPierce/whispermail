@@ -38,8 +38,8 @@ const SignalHelpers = {
 };
 
 class SignalStore extends CryptoDatabase {
-  constructor(authentication) {
-    super(authentication);
+  constructor(authentication, alternativePath = null) {
+    super(authentication, alternativePath);
     this.lockQueue = [];
   }
 
@@ -165,7 +165,7 @@ class SignalStore extends CryptoDatabase {
 	/* Returns a prekeypair object or undefined */
 	loadPreKey(keyId) {
     return new Promise((resolve, reject) => {
-			this.get('25519KeypreKey', keyId, { json: true }).then((res) => {
+			this.get('25519KeypreKey', keyId.toString(), { json: true }).then((res) => {
 	      if (res) {
 	        return resolve({
 						pubKey: SignalHelpers.toArrayBuffer(res.pubKey),
@@ -179,7 +179,7 @@ class SignalStore extends CryptoDatabase {
 	}
 
 	storePreKey(keyId, keyPair) {
-		return this.put('25519KeypreKey', keyId, {
+		return this.put('25519KeypreKey', keyId.toString(), {
 			pubKey: SignalHelpers.toString(keyPair.pubKey),
 			privKey: SignalHelpers.toString(keyPair.privKey)
 		}, { json: true });
@@ -218,13 +218,13 @@ class SignalStore extends CryptoDatabase {
 	}
 
 	removePreKey(keyId) {
-		return this.remove('25519KeypreKey', keyId);
+		return this.remove('25519KeypreKey', keyId.toString());
 	}
 
 	/* Returns a signed keypair object or undefined */
 	loadSignedPreKey(keyId) {
 		return new Promise((resolve, reject) => {
-			this.get('25519KeysignedKey', keyId, { json: true }).then((res) => {
+			this.get('25519KeysignedKey', keyId.toString(), { json: true }).then((res) => {
 	      if (res) {
 	        resolve({
 						pubKey: SignalHelpers.toArrayBuffer(res.pubKey),
@@ -238,7 +238,7 @@ class SignalStore extends CryptoDatabase {
 	}
 
 	storeSignedPreKey(keyId, keyPair) {
-		return this.put('25519KeysignedKey', keyId, {
+		return this.put('25519KeysignedKey', keyId.toString(), {
 			pubKey: SignalHelpers.toString(keyPair.pubKey),
 			privKey: SignalHelpers.toString(keyPair.privKey)
 		}, { json: true });
@@ -259,7 +259,7 @@ class SignalStore extends CryptoDatabase {
 	}
 
 	removeSignedPreKey(keyId) {
-		return this.remove('25519KeysignedKey', keyId);
+		return this.remove('25519KeysignedKey', keyId.toString());
 	}
 
 	loadSession(identifier) {

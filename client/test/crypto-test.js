@@ -1,29 +1,15 @@
-# WhisperMail
-An easy to use, decentralized, end-to-end encrypted email analogue based on the Signal Protocol.
-
-## TODO
-
-- Finish any in-code TODOs (deleting, etc...)
-- Initial cross-server local testing
-- HTTPS support (while keeping local dev)
-- Rudimentary UI for sending/receiving
-- Invite codes
-- Document server config
-- Add IP whitelist/blacklist to server
-- Improved login UI / start using SCSS
-- Improved server request validation
-- Figure out server logging
-- Build the full UI
-- Database import/export
-
 const Authentication = require('../models/authentication.js');
 const SignalStore = require('../models/signal-store.js');
 const ServerClient = require('../models/server-client.js');
 const MessageHandler = require('../models/message-handler.js');
 
+const fs = require('fs');
+
 module.exports = {
   test() {
     const authentication = new Authentication();
+    fs.unlinkSync('test/store-one.db');
+    fs.unlinkSync('test/store-two.db');
 
     return authentication.login('password').then(() => {
       const storeOne = new SignalStore(authentication, 'test/store-one.db');
@@ -70,18 +56,26 @@ module.exports = {
             }
           }).then(() => {
             return sessionCipher.encrypt(message).then((encrypted) => {
+              const cipherData = {
+                signalVersion: encrypted.type,
+                from: fromUser,
+                recipient: toUser,
+                data: SignalStore.Helpers.toString(
+                  SignalStore.Helpers.toArrayBuffer(encrypted.body),
+                  'base64'
+                ),
+                id: message.id
+              };
+
               const fromAddress = new libsignal.SignalProtocolAddress(fromUser, '0');
               const decryptSession = new libsignal.SessionCipher(storeTwo, fromAddress);
 
-              const serverMessage = SignalStore.Helpers.toString(
-                SignalStore.Helpers.toArrayBuffer(encrypted.body)
-              , 'base64');
-
               return decryptSession.decryptPreKeyWhisperMessage(
-                SignalStore.Helpers.toArrayBuffer(serverMessage, 'base64'),
+                SignalStore.Helpers.toArrayBuffer(cipherData.data, 'base64'),
                 'binary'
               ).then((decrypted) => {
                 const parsedMessage = JSON.parse(SignalStore.Helpers.toString(decrypted));
+                console.log('WE DID IT!');
                 console.log(parsedMessage);
                 return parsedMessage;
               });
