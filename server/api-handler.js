@@ -183,6 +183,7 @@ class ApiHandler {
   sendMessage(payload) {
     if (
       !payload.signalVersion ||
+      !payload.from ||
       !payload.recipient ||
       !payload.data ||
       !payload.id
@@ -192,6 +193,7 @@ class ApiHandler {
 
     const message = {
       signalVersion: payload.signalVersion,
+      from: payload.from,
       recipient: payload.recipient,
       data: payload.data,
       id: payload.id

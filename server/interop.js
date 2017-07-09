@@ -113,6 +113,7 @@ class InteropReceiver {
   sendMessage() {
     if (
       !this.body.payload.signalVersion ||
+      !this.body.payload.from ||
       !this.body.payload.recipient ||
       !this.body.payload.data ||
       !this.body.payload.id
@@ -127,6 +128,7 @@ class InteropReceiver {
         if (info) {
           const message = {
             signalVersion: this.body.payload.signalVersion,
+            from: this.body.payload.from,
             recipient: this.body.payload.recipient,
             data: this.body.payload.data,
             id: this.body.payload.id

@@ -10,6 +10,7 @@ Message schema:
 
 {
   signalVersion: <1 or 3>,
+  from: <email string>,
   recipient: <email string>,
   id: <guid string>,
   data: <base64 data>
@@ -80,7 +81,7 @@ class MessageHelper {
         }
 
         const sentMessages = recipients.map((recipient) => {
-          return this.sendIndividualMessage(json, recipient);
+          return this.sendIndividualMessage(json, recipient, loginInfo);
         });
 
         this.saveMessage(json).then(() => {
@@ -92,7 +93,7 @@ class MessageHelper {
     });
   }
 
-  sendIndividualMessage(message, recipient) {
+  sendIndividualMessage(message, recipient, loginInfo) {
     return new Promise((resolve, reject) => {
       this.establishRecipientSession(recipient.email).then(() => {
         const address = new libsignal.SignalProtocolAddress(recipient.email, '0');
@@ -101,6 +102,7 @@ class MessageHelper {
         sessionCipher.encrypt(JSON.stringify(message)).then((encrypted) => {
           const data = {
             signalVersion: encrypted.type,
+            from: `${loginInfo.username}@${loginInfo.serverAddress}`,
             recipient: recipient.email,
             data: SignalStore.Helpers.toString(
               SignalStore.Helpers.toArrayBuffer(encrypted.body),
@@ -164,7 +166,7 @@ class MessageHelper {
   }
 
   getNewMessages() {
-    this.serverClient.getMessages().then((messages) => {
+    return this.serverClient.getMessages().then((messages) => {
       return Promise.all(
         _.map(messages, (message) => this.handleMessage(message))
       );
@@ -174,7 +176,7 @@ class MessageHelper {
   // Decrypt a message from the server
   handleMessage(message) {
     return new Promise((resolve, reject) => {
-      const address = new libsignal.SignalProtocolAddress(message.recipient, '0');
+      const address = new libsignal.SignalProtocolAddress(message.from, '0');
       const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
 
       let decryptor;
