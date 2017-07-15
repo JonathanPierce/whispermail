@@ -10,15 +10,13 @@ An easy to use, decentralized, end-to-end encrypted email analogue based on the 
 
 ## TODO
 
-- Initial cross-server local testing
-- HTTPS support (while keeping local dev) - self-signed certs for dev?
+- Improved server request validation
 - Rudimentary UI for sending/receiving
-- Improve error handling (eg: one recipient fails out of 10)
-- Invite codes
 - Document server config
 - Add IP whitelist/blacklist to server
+- Invite codes
+- HTTPS support (while keeping local dev) - self-signed certs for dev?
 - Improved login UI / start using SCSS
-- Improved server request validation
 - Figure out server logging
 - Message etadata / read status / folders / etc..
 - Build the full UI

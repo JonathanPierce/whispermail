@@ -72,16 +72,56 @@ class MessageHelper {
           json.subject = subject;
         }
 
-        const sentMessages = recipients.map((recipient) => {
+        const messageSends = recipients.map((recipient) => {
           return this.sendIndividualMessage(json, recipient, loginInfo);
         });
 
         this.saveMessage(json).then(() => {
-          Promise.all(sentMessages).then((messages) => {
-            resolve(json);
+          Promise.all(messageSends).then((messageSendResults) => {
+            const failedMessages = _.filter(messageSendResults, { success: false });
+
+            if (failedMessages.length) {
+              const failedRecipients = _.map(failedMessages, (failed) => failed.recipient);
+              this.signalStore.saveSendFailure(id, failedRecipients).then(() => {
+                resolve({ message: json, sendResults: messageSendResults })
+              });
+            } else {
+              resolve({ message: json, sendResults: messageSendResults });
+            }
           }).catch(reject);
         }).catch(reject);
       }).catch(reject);
+    });
+  }
+
+  retryFailedSends() {
+    return this.signalStore.authentication.getLoginInfo().then((loginInfo) => {
+      return this.signalStore.getSendFailure().then((failures) => {
+        const retryFailure = (failure) => {
+          return this.signalStore.getMessage(failure.messageId).then((message) => {
+            return Promise.all(
+              _.map(failure.recipients, (recipient) => {
+                return this.sendIndividualMessage(message, recipient, loginInfo);
+              })
+            ).then((retryResults) => {
+              const failedMessages = _.filter(retryResults, { success: false });
+
+              if (failedMessages.length) {
+                const failedRecipients = _.map(failedMessages, (failed) => failed.recipient);
+                this.signalStore.saveSendFailure(message.id, failedRecipients).then(() => {
+                  resolve({ success: false, failedRecipients });
+                });
+              } else {
+                return this.signalStore.removeSendFailure(message.id).then(() => {
+                  return { success: true };
+                });
+              }
+            });
+          });
+        };
+
+        return Promise.all(_.map(failures, retryFailure));
+      });
     });
   }
 
@@ -104,10 +144,16 @@ class MessageHelper {
           };
 
           this.serverClient.sendMessage(data).then(() => {
-            resolve(data);
-          }).catch(reject);
-        }).catch(reject);
-      }).catch(reject);
+            resolve({ success: true, recipient });
+          }).catch(() => {
+            resolve({ success: false, error: 'failed to send message', recipient });
+          });
+        }).catch(() => {
+          resolve({ success: false, error: 'failed to encrypt message', recipient });
+        });
+      }).catch(() => {
+        resolve({ success: false, error: 'failed to start session', recipient })
+      });
     });
   }
 
@@ -165,7 +211,7 @@ class MessageHelper {
     });
   }
 
-  // Decrypt a message from the server
+  // Decrypt and persist a message from the server
   handleMessage(message) {
     return new Promise((resolve, reject) => {
       const address = new libsignal.SignalProtocolAddress(message.from, '0');
@@ -180,7 +226,9 @@ class MessageHelper {
 
       decryptor(message.data, 'binary').then((plaintext) => {
         const parsedMessage = JSON.parse(SignalStore.Helpers.toString(plaintext));
-        this.saveMessage(parsedMessage).then(resolve).catch(reject);
+        this.saveMessage(parsedMessage).then(() => {
+          resolve(parsedMessage);
+        }).catch(reject);
       }).catch(reject);
     });
   }

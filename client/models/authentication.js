@@ -7,7 +7,6 @@ class Authentication extends Database {
   constructor() {
     super('./login-info.db');
     this.privateKey = null;
-    this.loginInfo = null;
   }
 
   migrate(database) {
@@ -34,23 +33,20 @@ class Authentication extends Database {
   }
 
   getLoginInfo() {
-    if (this.loginInfo) {
-      return Promise.resolve(this.loginInfo);
-    }
-
-    return new Promise((resolve, reject) => {
-      this.getDatabase().then((database) => {
-        database.get('SELECT * FROM LoginInfo', (err, loginInfo) => {
-          if (err) {
-            reject(err);
-          } else if (!loginInfo) {
-            resolve(null);
-          } else {
-            this.loginInfo = loginInfo;
-            resolve(loginInfo);
-          }
-        });
-      }).catch(reject);
+    return this.withCache('getLoginInfo', () => {
+      return new Promise((resolve, reject) => {
+        this.getDatabase().then((database) => {
+          database.get('SELECT * FROM LoginInfo', (err, loginInfo) => {
+            if (err) {
+              reject(err);
+            } else if (!loginInfo) {
+              resolve(null);
+            } else {
+              resolve(loginInfo);
+            }
+          });
+        }).catch(reject);
+      });
     });
   }
 

@@ -115,9 +115,7 @@ class CryptoDatabase extends Database {
             } else if (!row) {
               resolve(null);
             } else {
-              this.processGetValue(row.value, options).then((processedValue) => {
-                resolve(processedValue);
-              }).catch(reject);
+              this.processGetValue(row.value, options).then(resolve).catch(reject);
             }
           }
         );
@@ -125,7 +123,7 @@ class CryptoDatabase extends Database {
     });
   }
 
-  getAll(kind, identifier = null, options = {}) {
+  getAll(kind, options = {}) {
     return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
         database.all(
@@ -142,6 +140,26 @@ class CryptoDatabase extends Database {
               Promise.all(processedResults).then((processed) => {
                 resolve(processed);
               }).catch(reject);
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  }
+
+  getMessages(id) {
+    return new Promise((resolve, reject) => {
+      this.getDatabase().then((database) => {
+        database.get(
+          `SELECT data FROM Messages WHERE id = ?`,
+          [id],
+          (err, result) => {
+            if (err) {
+              reject(err);
+            else if (!result) {
+              resolve(null);
+            } else {
+              this.processGetValue(result.data, { json: true }).then(resolve).catch(reject);
             }
           }
         );

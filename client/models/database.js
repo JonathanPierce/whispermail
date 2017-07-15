@@ -5,6 +5,7 @@ class Database {
   constructor(path) {
     this.path = path;
     this.database = null;
+    this.cache = {};
   }
 
   getDatabase() {
@@ -42,6 +43,14 @@ class Database {
 
   migrate(database) {
     // implement in a sub-class
+  }
+
+  withCache(key, callback) {
+    if (!this.cache[key]) {
+      this.cache[key] = callback();
+    }
+
+    return this.cache[key];
   }
 
   close() {

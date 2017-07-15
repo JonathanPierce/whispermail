@@ -60,14 +60,16 @@ class SignalStore extends CryptoDatabase {
   }
 
   getIdentityKeyPair() {
-		return new Promise((resolve, reject) => {
-			this.get('identityKey', null, { json: true }).then((keyPair) => {
-				resolve({
-					pubKey: SignalHelpers.toArrayBuffer(keyPair.pubKey),
-					privKey: SignalHelpers.toArrayBuffer(keyPair.privKey)
-				});
-			}).catch(reject);
-		});
+    return this.withCache('getIdentityKeyPair', () => {
+      return new Promise((resolve, reject) => {
+  			this.get('identityKey', null, { json: true }).then((keyPair) => {
+  				resolve({
+  					pubKey: SignalHelpers.toArrayBuffer(keyPair.pubKey),
+  					privKey: SignalHelpers.toArrayBuffer(keyPair.privKey)
+  				});
+  			}).catch(reject);
+  		});
+    });
 	}
 
   saveIdentityKeyPair(keyPair) {
@@ -90,11 +92,13 @@ class SignalStore extends CryptoDatabase {
   }
 
 	getLocalRegistrationId() {
-		return new Promise((resolve, reject) => {
-			this.get('registrationId').then((id) => {
-				resolve(parseInt(id, 10))
-			}).catch(reject);
-		});
+    return this.withCache('getLocalRegistrationId', () => {
+      return new Promise((resolve, reject) => {
+  			this.get('registrationId').then((id) => {
+  				resolve(parseInt(id, 10))
+  			}).catch(reject);
+  		});
+    });
 	}
 
   saveLocalRegistrationId(registrationId) {
@@ -319,6 +323,25 @@ class SignalStore extends CryptoDatabase {
 
   saveRecipientInfo(email, info) {
     return this.put('recipientInfo', email, info, { json: true });
+  }
+
+  getSendFailure(messageId) {
+    return this.get('sendFailures', messageId, { json: true });
+  }
+
+  getSendFailures() {
+    return this.getAll('sendFailures', { json: true });
+  }
+
+  saveSendFailure(messageId, recipients) {
+    return this.put('sendFailures', messageId, {
+      messageId,
+      recipients
+    }, { json: true });
+  }
+
+  removeSendFailure(messageId) {
+    return this.remove('sendFailures', messageId);
   }
 }
 

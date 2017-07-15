@@ -6,14 +6,17 @@ const MessageHandler = require('../models/message-handler.js');
 const fs = require('fs');
 
 module.exports = {
-  test() {
+  test(password) {
     const authentication = new Authentication();
-    fs.unlinkSync('test/store-one.db');
-    fs.unlinkSync('test/store-two.db');
+    
+    try {
+      fs.unlinkSync('./test/store-one.db');
+      fs.unlinkSync('./test/store-two.db');
+    } catch(ex) { /* first test run */ }
 
-    return authentication.login('password').then(() => {
-      const storeOne = new SignalStore(authentication, 'test/store-one.db');
-      const storeTwo = new SignalStore(authentication, 'test/store-two.db');
+    return authentication.login(password).then(() => {
+      const storeOne = new SignalStore(authentication, './test/store-one.db');
+      const storeTwo = new SignalStore(authentication, './test/store-two.db');
 
       const setupUser = (store) => {
         return store.createNewSignalKeys();
