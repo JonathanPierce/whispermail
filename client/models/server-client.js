@@ -80,7 +80,7 @@ class ServerClient {
   }
 
   deregister() {
-    return this.makeRequest('deregister'); // TODO
+    return this.makeRequest('deregister');
   }
 
   getMessages() {

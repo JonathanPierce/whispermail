@@ -163,8 +163,26 @@ class ServerDatabase extends Database {
     return new Promise((resolve, reject) => {
       this.getDatabase().then((database) => {
         database.run(
-          `DELETE FROM WhisperServer WHERE username = ? AND kind = ? AND identifier ${ identifier ? '= ?' : 'IS NULL'}`,
+          `DELETE FROM WhisperServer WHERE username = ? AND kind = ?${ identifier ? ' AND identifier = ?' : ''}`,
           identifier ? [ username, kind, identifier ] : [ username, kind ],
+          (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          }
+        );
+      }).catch(reject);
+    });
+  }
+
+  wipeUser(username) {
+    return new Promise((resolve, reject) => {
+      this.getDatabase().then((database) => {
+        database.run(
+          `DELETE FROM WhisperServer WHERE username = ?`,
+          [ username ],
           (err) => {
             if (err) {
               reject(err);

@@ -10,9 +10,6 @@ An easy to use, decentralized, end-to-end encrypted email analogue based on the 
 
 ## TODO
 
-- Make sure messages delete properly on server
-- Finish any in-code TODOs (deleting, deregistering, etc...)
-- Change message schema to be email-only for recipient/sender?
 - Initial cross-server local testing
 - HTTPS support (while keeping local dev) - self-signed certs for dev?
 - Rudimentary UI for sending/receiving
@@ -23,5 +20,6 @@ An easy to use, decentralized, end-to-end encrypted email analogue based on the 
 - Improved login UI / start using SCSS
 - Improved server request validation
 - Figure out server logging
+- Message etadata / read status / folders / etc..
 - Build the full UI
 - Database import/export

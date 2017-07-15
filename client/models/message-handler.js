@@ -24,16 +24,8 @@ Data schema:
   whispermailVersion: <string>,
   subject: <string>, // only if parentId is null
   sent: <current time>
-  from: {
-    name: <string>,
-    email: <string>
-  },
-  recipients: [
-    {
-      name: <string>,
-      email: <string>
-    }
-  ],
+  from: < email string >,
+  recipients: [ <email strings > ],
   message: <string>
 }
 
@@ -95,20 +87,20 @@ class MessageHelper {
 
   sendIndividualMessage(message, recipient, loginInfo) {
     return new Promise((resolve, reject) => {
-      this.establishRecipientSession(recipient.email).then(() => {
-        const address = new libsignal.SignalProtocolAddress(recipient.email, '0');
+      this.establishRecipientSession(recipient).then(() => {
+        const address = new libsignal.SignalProtocolAddress(recipient, '0');
         const sessionCipher = new libsignal.SessionCipher(this.signalStore, address);
 
         sessionCipher.encrypt(JSON.stringify(message)).then((encrypted) => {
           const data = {
             signalVersion: encrypted.type,
             from: `${loginInfo.username}@${loginInfo.serverAddress}`,
-            recipient: recipient.email,
+            recipient: recipient,
             data: SignalStore.Helpers.toString(
               SignalStore.Helpers.toArrayBuffer(encrypted.body),
               'base64'
             ),
-            id: message.id
+            id: uuidV4() // Just needs to be unqiue. Used to identify on server.
           };
 
           this.serverClient.sendMessage(data).then(() => {
@@ -198,8 +190,18 @@ class MessageHelper {
   }
 
   // Deletes the message tree rooted at the message
-  deleteMessage() {
-    // TODO
+  deleteMessage(message) {
+    return this.getMessageTree(message).then((messageTree) => {
+      return this.signalStore.removeMessage(message).then(() => {
+        const deleteReplies = (reply) => {
+          return this.signalStore.removeMessage(reply).then(() => {
+            return Promise.all(_.map(reply.replies, deleteReplies));
+          });
+        };
+
+        return Promise.all(_.map(messageTree.replies, deleteReplies));
+      });
+    });
   }
 
   getRootMessages() {
@@ -211,7 +213,7 @@ class MessageHelper {
       this.signalStore.getMessages(message.id).then((replies) => {
         message.replies = replies;
 
-        let promises = message.replies.map((message) => {
+        const promises = message.replies.map((message) => {
           return this.getMessageTree(message);
         });
 

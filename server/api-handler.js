@@ -224,7 +224,7 @@ class ApiHandler {
       this.database.put(
         this.body.username,
         'preKey',
-        payload.keyId,
+        payload.keyId.toString(),
         preKey,
         { json: true }
       ).then(() => {
@@ -254,13 +254,19 @@ class ApiHandler {
         this.database.put(
           this.body.username,
           'signedPreKey',
-          payload.keyId,
+          payload.keyId.toString(),
           signedPreKey,
           { json: true }
         ).then(() => {
           resolve({ success: true });
         }).catch(reject);
       }).catch(reject);
+    });
+  }
+
+  deregister(payload) {
+    return this.database.wipeUser(this.body.username).then(() => {
+      return { wiped: true };
     });
   }
 }

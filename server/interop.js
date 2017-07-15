@@ -97,7 +97,11 @@ class InteropReceiver {
               name: info.name,
               registrationId: info.registrationId,
               identityKey: info.publicKey,
-              signedPreKey: signedPreKey,
+              signedPreKey: {
+                keyId: signedPreKey.keyId,
+                publicKey: signedPreKey.publicKey,
+                signature: signedPreKey.signature
+              },
               preKey: preKey
             };
 
