@@ -88,7 +88,7 @@ class ServerDatabase extends Database {
           const preKey = _.first(preKeys);
 
           // preKeys are only used once
-          this.remove(username, 'preKey', preKey.keyId).then(() => {
+          this.remove(username, 'preKey', preKey.keyId.toString()).then(() => {
             resolve(preKey);
           }).catch(reject);
         } else {

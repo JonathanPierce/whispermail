@@ -3,6 +3,7 @@ const prompt = require('prompt');
 const config = require('./config.json');
 const packageJSON = require('./package.json');
 const bodyParser = require('body-parser');
+const validator = require('validator');
 
 // TODO: Use HTTPS
 
@@ -16,7 +17,7 @@ const database = new ServerDatabase(authentication);
 
 function start() {
   const app = express();
-  app.use(bodyParser.json());
+  app.use(bodyParser.json({ limit: config.limits.requestSize }));
 
   console.log(`Starting WhisperMail Server v${packageJSON.version} on port ${config.port}...`);
 
@@ -30,14 +31,14 @@ function start() {
 
   app.post('/register', (req, res) => {
     if (
-      req.body.username &&
+      req.body.username && validator.isAlphanumeric(req.body.username) &&
       req.body.name &&
-      req.body.publicKey &&
+      req.body.publicKey && validator.isBase64(req.body.publicKey) &&
       req.body.registrationId &&
-      req.body.apiPublicKey
+      req.body.apiPublicKey && validator.isBase64(req.body.apiPublicKey)
     ) {
       const data = {
-        username: req.body.username,
+        username: req.body.username.toLowerCase(),
         name: req.body.name,
         publicKey: req.body.publicKey,
         registrationId: req.body.registrationId,
@@ -50,7 +51,7 @@ function start() {
           res.status(400).end();
         } else {
           // create user
-          database.put(req.body.username, 'info', null, data, { json: true }).then(() => {
+          database.put(data.username, 'info', null, data, { json: true }).then(() => {
             res.json({ success: true });
           }).catch(() => res.status(503).end());
         }

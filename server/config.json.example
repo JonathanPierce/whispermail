@@ -1,0 +1,8 @@
+{
+  "port": 1337,
+  "cert": "path/to/cert",
+  "certKey": "path/to/certKey",
+  "limits": {
+    "requestSize": 500000
+  }
+}

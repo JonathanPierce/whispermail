@@ -1,6 +1,7 @@
 const uuidV4 = require('uuid/v4');
 const nacl = require('tweetnacl');
 const packageJSON = require('./package.json');
+const validator = require('validator');
 const _ = require('lodash');
 
 const { InteropSender } = require('./interop.js');
@@ -8,6 +9,7 @@ const { InteropSender } = require('./interop.js');
 const METHODS = {
   CHALLENGE_RESPONSE: 'challengeResponse',
   CHECK: 'check',
+  DEREGISTER: 'deregister',
   GET_MESSAGES: 'getMessages',
   SEND_MESSAGE: 'sendMessage',
   GET_RECIPIENT: 'getRecipient',
@@ -22,6 +24,10 @@ class ApiHandler {
     this.body = req.body;
     this.database = database;
     this.sender = new InteropSender();
+
+    if (this.body.username) {
+      this.body.username = this.body.username.toLowerCase();
+    }
   }
 
   handle() {
@@ -59,6 +65,13 @@ class ApiHandler {
       const payload = this.body.payload;
 
       if (payload && payload.challengeId && payload.signedChallenge) {
+        if (
+          !validator.isUUID(payload.challengeId, 4) ||
+          !validator.isBase64(payload.signedChallenge)
+        ) {
+          return reject('failed validation');
+        }
+
         this.database.get(this.body.username, 'requests', payload.challengeId, { json: true }).then((request) => {
           if (request) {
             this.database.remove(this.body.username, 'requests', payload.challengeId).then(() => {
@@ -215,6 +228,13 @@ class ApiHandler {
       return Promise.reject('requires keyId and publicKey');
     }
 
+    if (
+      !_.isFinite(payload.keyId) ||
+      !validator.isBase64(payload.publicKey)
+    ) {
+      return Promise.reject('failed validation');
+    }
+
     const preKey = {
       keyId: payload.keyId,
       publicKey: payload.publicKey
@@ -240,6 +260,14 @@ class ApiHandler {
       !payload.signature
     ) {
       return Promise.reject('requires keyId, publicKey, and signature');
+    }
+
+    if (
+      !_.isFinite(payload.keyId) ||
+      !validator.isBase64(payload.publicKey) ||
+      !validator.isBase64(payload.signature)
+    ) {
+      return Promise.reject('failed validation');
     }
 
     const signedPreKey = {

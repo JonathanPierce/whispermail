@@ -156,7 +156,7 @@ class CryptoDatabase extends Database {
           (err, result) => {
             if (err) {
               reject(err);
-            else if (!result) {
+            } else if (!result) {
               resolve(null);
             } else {
               this.processGetValue(result.data, { json: true }).then(resolve).catch(reject);

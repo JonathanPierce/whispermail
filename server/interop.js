@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const validator = require('validator');
 const _ = require('lodash');
 
 function getUsername(recipient) {
@@ -82,7 +83,7 @@ class InteropReceiver {
     }
 
     return new Promise((resolve, reject) => {
-      const username = this.body.payload.username;
+      const username = this.body.payload.username.toLowerCase();
 
       this.database.getInfo(username).then((info) => {
         if (info) {
@@ -125,8 +126,18 @@ class InteropReceiver {
       return Promise.reject('message does not match schema');
     }
 
+    if (
+      !_.includes([1,3], this.body.payload.signalVersion) ||
+      !validator.isEmail(this.body.payload.from) ||
+      !validator.isEmail(this.body.payload.recipient) ||
+      !validator.isBase64(this.body.payload.data) ||
+      !validator.isUUID(this.body.payload.id, 4)
+    ) {
+      return Promise.reject('message does not meet validation');
+    }
+
     return new Promise((resolve, reject) => {
-      const username = getUsername(this.body.payload.recipient);
+      const username = getUsername(this.body.payload.recipient).toLowerCase();
 
       this.database.getInfo(username).then((info) => {
         if (info) {
